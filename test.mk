@@ -6,13 +6,19 @@ LDFLAGS=-L../../
 LDLIBS=-lmiscellany `pkg-config --libs check`
 
 TARGETS=main.o
+TARGETS:=$(addprefix $(BUILDDIR)/, $(TARGETS))
 
 $(NAME): $(TARGETS)
 	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
+
+$(TARGETS): | $(BUILDDIR)
+
+$(BUILDDIR):
+	 mkdir $(BUILDDIR)
 
 clean: 
 	rm $(BUILDDIR)/*
 	rm $(NAME)
 
-$(addprefix $(BUILDDIR)/, $(TARGETS)): $(BUILDDIR)/%.o : src/%.c
+$(TARGETS): $(BUILDDIR)/%.o : src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@

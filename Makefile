@@ -10,7 +10,13 @@ TARGETS=btree.o dlist.o
 .PHONY: clean
 
 $(NAME): $(TARGETS)
-	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
+	$(CC) $(LDFLAGS) $(LDLIBS) $< -o $@
+
+$(TARGETS): | $(BUILDDIR)
+
+$(BUILDDIR):
+	mkdir $(BUILDDIR)
+
 
 clean: 
 	rm $(BUILDDIR)/*
