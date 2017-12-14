@@ -12,8 +12,9 @@
 struct btree
 {
 	void *data;
-	struct btree *parent;
-	struct btree *child[2]; /* 0 is left, 1 is right. */
+	/* 0 for left, 1 for right. */
+	int thread[2];
+	struct btree *link[2]; /* A threaded link or a child. */
 };
 
 /* These should return a negative value if (left < right), 0 if (left == right)
@@ -22,14 +23,12 @@ struct btree
 typedef int (*btree_cmp_fn)(void *left, void *right);
 typedef int (*btree_cmp_ex_fn)(void *left, void *right, void *external_arg);
 
-/* ---------- functions ---------- */
-
-/* Creation. */
+/* ---------- creation ---------- */
 
 extern struct btree *
 btree_create(void *data);
 
-/* Destruction. */
+/* ---------- destruction ---------- */
 
 /* Note that you can freely destroy subtrees, the parent tree (if there's one)
  * will be updated to exclude the destroyed subtree. */
@@ -43,27 +42,33 @@ btree_destroy_ex(struct btree *, void (*destroyer)(void *data));
 extern void 
 btree_destroy_exx(struct btree *, void (*destroyer)(void *data, void *arg), void *arg);
 
-/* Accessing struct members and information retrieval. */
+/* ---------- accessing struct members and information retrieval ---------- */
 
 #define btree_data(tree) (tree->data)
 #define btree_left(tree) (tree->child[0])
 #define btree_right(tree) (tree->child[1])
-#define btree_parent(tree) (tree->parent)
-#define btree_child(tree, dir) (tree->child[!!dir])
+#define	btree_thread(tree, dir) (tree->is_thread[!!dir])
+#define btree_link(tree, dir) (tree->child[!!dir])
 
-#define btree_has_children(tree) (tree->child[0] != NULL || tree->child[1] != NULL)
-#define btree_is_a_leaf(tree) (tree->child[0] == NULL && tree->child[1] == NULL)
-#define btree_has_parent(tree) (tree->parent != NULL)
+extern int
+btree_has_children(struct btree *);
 
-/* Searching. */
+/* Return the index of the link in the links array of the given tree, or -1 if
+ * the link is not there. */
+extern int
+btree_link_dir(struct btree *tree, struct btree *link);
+
+/* ---------- searching ---------- */
 
 /* Return 1 if the element was found (and fill res with it), return 0 and do
- * nothing with 'res' otherwise. */
+ * nothing with 'res' otherwise. Pass NULL as 'res' to avoid filling it with
+ * anything. */
 extern int
 btree_find(struct btree *tree, void *data, btree_cmp_fn cmp, void **res);
 
 /* Return 1 if the element was found (and fill res with it), return 0 and do
- * nothing with 'res' otherwise. */
+ * nothing with 'res' otherwise. Pass NULL as 'res' to avoid filling it with
+ * anything. */
 extern int
 btree_find_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *cmp_arg, void **res);
 
@@ -73,14 +78,27 @@ btree_find_node(struct btree *tree, void *data, btree_cmp_fn cmp);
 extern struct btree *
 btree_find_node_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *cmp_arg);
 
-/* These two only search down the tree. */
 extern struct btree *
-btree_predecessor(struct btree *tree);
+btree_parent(struct btree *tree);
 
+/* Note that this searches for a successor of the entire subtree. */
 extern struct btree *
 btree_successor(struct btree *tree);
 
-/* Insertion. */
+/* Note that this searches for a predecessor of the entire subtree. */
+extern struct btree *
+btree_predecessor(struct btree *tree);
+
+/* Return either left or right outermost subnode of the subtree. */
+extern struct btree *
+btree_outermost(struct btree *tree, int dir);
+
+/* Return either predecessor of the leftmost subnode or a successor of the 
+ * rightmost subnode. */
+extern struct btree *
+btree_after_outermost(struct btree *tree, int dir);
+
+/* ---------- insertion ---------- */
 
 /* Return the freshly created node, or NULL on an OOM condition. */
 extern struct btree *
@@ -90,7 +108,7 @@ btree_insert(struct btree *tree, void *data, btree_cmp_fn cmp);
 extern struct btree *
 btree_insert_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *arg);
 
-/* Deletion. */
+/* ---------- deletion ---------- */
 
 /* There's no function to delete subtrees - this is done with btree_destroy[_ex]. */
 
@@ -108,7 +126,7 @@ extern int
 btree_delete_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *arg,
 		struct btree **tree_after, void **deleted);
 
-/* Other. */
+/* ---------- other ---------- */
 
 extern void
 btree_rebalance(struct btree *tree, btree_cmp_fn cmp);
@@ -124,11 +142,11 @@ btree_reorder_ex(struct btree *tree, btree_cmp_ex_fn new_cmp, void *cmp_arg);
 
 /* This is shallow copying. Also note that if you're copying a subtree, its 
  * copy will be made into a standalone tree not referring in any way to the
- * original's parent. */
+ * original's parent tree. */
 extern struct btree *
 btree_copy(struct btree *tree);
 
-/* Unlinks the given subtree from its parent tree. */
+/* Unlink the given subtree from its tree. */
 extern void
 btree_unlink(struct btree *tree);
 
