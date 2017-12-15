@@ -17,7 +17,6 @@ btree_create(void *data)
 	res->link[0] = NULL;
 	res->link[1] = NULL;
 
-
 	return res;
 }
 
@@ -77,6 +76,102 @@ btree_destroy_exx(struct btree *tree, void (*destroyer)(void *data, void *arg), 
 }
 
 #endif
+
+/* ---------- traversal ---------- */
+
+/* Helper functions. */
+
+struct btree *
+btt_next_inorder(struct btt *btt)
+{
+	struct btree *cur = btt->cur;
+	if (cur->thread[1]) {
+		btt->cur = cur->link[1];
+	} else {
+		cur = cur->link[1];
+		while (!cur->thread[0] && cur->link[0] != NULL) 
+			cur = cur->link[0];
+		btt->cur = cur;
+	}
+	return btt->cur;
+}
+
+struct btree *
+btt_next_inorder_rev(struct btt *btt)
+{
+	struct btree *cur = btt->cur;
+	if (cur->thread[0]) {
+		btt->cur = cur->link[0];
+	} else {
+		cur = cur->link[0];
+		while (!cur->thread[1] && cur->link[1] != NULL) 
+			cur = cur->link[1];
+		btt->cur = cur;
+	}
+	return btt->cur;
+}
+
+/* Exported functions. */
+
+struct btt *
+btt_create(struct btree *tree, enum btt_type type)
+{
+	struct btt *res = malloc(sizeof(struct btt));
+	if (res == NULL) return NULL;
+
+	btt_init(res, tree, type);
+	return res;
+}
+
+void
+btt_init(struct btt *btt, struct btree *tree, enum btt_type type)
+{
+	btt->tree = tree;
+	btt->type = type;
+	switch (type) {
+		case BTT_INORDER:
+			btt->cur = btree_outermost(tree, 0);
+			break;
+		case BTT_INORDER_REV:
+			btt->cur = btree_outermost(tree, 1);
+			break;
+	} /* switch type */
+}
+
+void *
+btt_next(struct btt *btt)
+{
+	return btt_next_node(btt)->data;
+}
+
+struct btree *
+btt_next_node(struct btt *btt)
+{
+	switch (btt->type) {
+		case BTT_INORDER: return btt_next_inorder(btt);
+		case BTT_INORDER_REV: return btt_next_inorder_rev(btt);
+	}
+}
+
+void
+btt_rewind(struct btt *btt)
+{
+	btt_fin(btt);
+	btt_init(btt, btt->tree, btt->type);
+}
+
+void
+btt_destroy(struct btt *btt)
+{
+	btt_fin(btt);
+	free(btt);
+}
+
+void
+btt_fin(struct btt *btt)
+{
+	/* TODO: btt_fin: clear up any state. */
+}
 
 /* ---------- information retrieval ---------- */
 

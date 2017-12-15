@@ -9,12 +9,25 @@
 
 /* ---------- base stuff ---------- */
 
+enum btt_type
+{
+	BTT_INORDER,
+	BTT_INORDER_REV,
+};
+
 struct btree
 {
 	void *data;
 	/* 0 for left, 1 for right. */
 	int thread[2];
 	struct btree *link[2]; /* A threaded link or a child. */
+};
+
+/* btt - binary tree traversal */
+struct btt
+{
+	enum btt_type type;
+	struct btree *tree, *cur;
 };
 
 /* These should return a negative value if (left < right), 0 if (left == right)
@@ -41,6 +54,36 @@ btree_destroy_ex(struct btree *, void (*destroyer)(void *data));
 
 extern void 
 btree_destroy_exx(struct btree *, void (*destroyer)(void *data, void *arg), void *arg);
+
+/* ---------- traversal ---------- */
+
+extern struct btt *
+btt_create(struct btree *tree, enum btt_type type);
+
+/* A non-allocating version of the above. */
+extern void
+btt_init(struct btt *btt, struct btree *tree, enum btt_type type);
+
+#define btt_done(btt) (btt->cur == NULL)
+#define btt_this(btt) (btt->cur->data)
+#define btt_this_node(btt) (btt->cur)
+
+extern void *
+btt_next(struct btt *);
+
+extern struct btree *
+btt_next_node(struct btt *);
+
+extern void
+btt_rewind(struct btt *);
+
+extern void
+btt_destroy(struct btt *);
+
+/* Finalize a traversal without freeing its memory (just its state's memory, if
+ * any, will be freed) */
+extern void
+btt_fin(struct btt *);
 
 /* ---------- accessing struct members and information retrieval ---------- */
 
