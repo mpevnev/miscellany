@@ -1,7 +1,7 @@
 
 BUILDDIR=build
 VPATH=src:$(BUILDDIR)
-CFLAGS=-Wall -Iinclude -I../../include `pkg-config --cflags check`
+CFLAGS=-Wall -Iinclude -I../../include -ggdb `pkg-config --cflags check`
 LDFLAGS=-L../../
 LDLIBS=-lmiscellany `pkg-config --libs check`
 
