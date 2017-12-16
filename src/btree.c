@@ -22,60 +22,42 @@ btree_create(void *data)
 
 /* ---------- destruction ---------- */
 
-#if 0
-
-/* A helper macro to avoid duplicating destruction code thrice. */
-#define DESTROY_PROTO(tree, cur, free_line) \
+#define DESTROY_BODY(tree, free_data) \
 { \
+	if (tree == NULL) return; \
 	btree_unlink(tree); \
-	struct btree *cur = tree; \
-	while (cur != NULL) { \
-		/* Find a leaf, delete it, find the next closest leaf, and so on. */ \
-		while (btree_has_children(cur)) { \
-			struct btree *left = cur->child[0]; \
-			if (left != NULL) { \
-				cur = left; \
-				continue; \
-			} \
-			struct btree *right = cur->child[1]; \
-			if (right != NULL) { \
-				cur = right; \
-				continue; \
-			} \
+ \
+	tree = btree_outermost(tree, 0); \
+	while (tree != NULL) { \
+		struct btree *link = tree->link[1]; \
+		int thread = tree->thread[1]; \
+		free_data; \
+		free(tree); \
+		tree = link; \
+		if (!thread && link != NULL) { \
+			while (!tree->thread[0] && tree->link[0] != NULL) \
+				tree = tree->link[0]; \
 		} \
-		/* Now 'cur' holds a leaf. */ \
-		struct btree *next = cur->parent; \
-		if (next != NULL) { \
-			if (next->child[0] == cur) \
-				next->child[0] = NULL; \
-			else if (next->child[1] == cur) \
-				next->child[1] = NULL; \
-		} \
-		cur = next; \
-		free_line; \
-		free(cur); \
 	} \
-}
+} \
 
-void 
+void
 btree_destroy(struct btree *tree)
 {
-	DESTROY_PROTO(tree, cur, ;);
+	DESTROY_BODY(tree, (void) 0);
 }
 
 void
 btree_destroy_ex(struct btree *tree, void (*destroyer)(void *data))
 {
-	DESTROY_PROTO(tree, cur, destroyer(cur->data));
+	DESTROY_BODY(tree, destroyer(tree->data));
 }
 
-void 
+void
 btree_destroy_exx(struct btree *tree, void (*destroyer)(void *data, void *arg), void *arg)
 {
-	DESTROY_PROTO(tree, cur, destroyer(cur->data, arg));
+	DESTROY_BODY(tree, destroyer(tree->data, arg));
 }
-
-#endif
 
 /* ---------- traversal ---------- */
 
