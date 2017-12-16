@@ -236,6 +236,51 @@ START_TEST(test_inorder_rev)
 }
 END_TEST;
 
+START_TEST(test_unlink_and_destroy)
+{
+	int root = 0;
+	int i1 = -5;
+	int i2 = 5;
+	int i3 = -10;
+	int i4 = -3;
+	int i5 = -4;
+	int i6 = -2;
+
+	struct btree *t = btree_create(&root);
+	ck_assert_msg(t != NULL, "Failed to create a tree");
+
+	ck_assert_msg(btree_insert(t, &i1, &cmp_ints), "Failed to insert -5 into the tree");
+	ck_assert_msg(btree_insert(t, &i2, &cmp_ints), "Failed to insert 5 into the tree");
+	ck_assert_msg(btree_insert(t, &i3, &cmp_ints), "Failed to insert -10 into the tree");
+	ck_assert_msg(btree_insert(t, &i4, &cmp_ints), "Failed to insert -3 into the tree");
+	ck_assert_msg(btree_insert(t, &i5, &cmp_ints), "Failed to insert -4 into the tree");
+	ck_assert_msg(btree_insert(t, &i6, &cmp_ints), "Failed to insert -2 into the tree");
+
+	struct btree *to_destroy = btree_find_node(t, &i4, &cmp_ints);
+	ck_assert_msg(to_destroy != NULL, "Can't find the node to be deleted in the tree");
+	btree_destroy(to_destroy);
+
+	struct btree *to_unlink = btree_find_node(t, &i2, &cmp_ints);
+	ck_assert_msg(to_unlink != NULL, "Can't find the node to be unlinked in the tree");
+	btree_unlink(to_unlink);
+
+	/* This should be a no-op. */
+	btree_unlink(t);
+
+	/* Check what elements the remaining tree contains. */
+	ck_assert_msg(btree_find(t, &root, &cmp_ints, NULL), "Root node was deleted");
+	ck_assert_msg(btree_find(t, &i1, &cmp_ints, NULL), "-5 node was deleted");
+	ck_assert_msg(btree_find(t, &i3, &cmp_ints, NULL), "-10 node was deleted");
+	ck_assert_msg(!btree_find(t, &i2, &cmp_ints, NULL), "5 node was not deleted");
+	ck_assert_msg(!btree_find(t, &i4, &cmp_ints, NULL), "-3 node was not deleted");
+	ck_assert_msg(!btree_find(t, &i5, &cmp_ints, NULL), "-4 node was not deleted");
+	ck_assert_msg(!btree_find(t, &i6, &cmp_ints, NULL), "-2 node was not deleted");
+
+	btree_destroy(to_unlink);
+	btree_destroy(t);
+}
+END_TEST;
+
 Suite *
 btree_suite(void)
 {
@@ -248,6 +293,7 @@ btree_suite(void)
 	tcase_add_test(core_tests, test_varsearch);
 	tcase_add_test(core_tests, test_inorder);
 	tcase_add_test(core_tests, test_inorder_rev);
+	tcase_add_test(core_tests, test_unlink_and_destroy);
 
 	suite_add_tcase(res, core_tests);
 
