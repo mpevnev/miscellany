@@ -45,49 +45,6 @@ START_TEST(test_insert_and_find)
 }
 END_TEST;
 
-START_TEST(test_insert_and_find_ex)
-{
-	struct btree *t = btree_create(mkint(0));
-	ck_assert_msg(t != NULL, "Failed to create a tree");
-
-	void *pos1 = mkint(-1);
-	void *pos2 = mkint(2);
-	void *pos3 = mkint(-10);
-	void *pos4 = mkint(-5);
-
-	int neg1 = 20;
-	int neg2 = 1;
-	int neg3 = -100;
-	int neg4 = -7;
-
-	struct btree *n1 = btree_insert_ex(t, pos1, &cmp_ints_ex, NULL);
-	struct btree *n2 = btree_insert_ex(t, pos2, &cmp_ints_ex, NULL);
-	struct btree *n3 = btree_insert_ex(t, pos3, &cmp_ints_ex, NULL);
-	struct btree *n4 = btree_insert_ex(t, pos4, &cmp_ints_ex, NULL);
-
-	ck_assert_msg(n1 != NULL, "Failed to insert -1 into the tree");
-	ck_assert_msg(n2 != NULL, "Failed to insert 2 into the tree");
-	ck_assert_msg(n3 != NULL, "Failed to insert -10 into the tree");
-	ck_assert_msg(n4 != NULL, "Failed to insert -5 into the tree");
-
-	ck_assert_msg(btree_find_ex(t, pos1, &cmp_ints_ex, NULL, NULL), 
-			"Failed to find -1 in the tree");
-	ck_assert_msg(btree_find_ex(t, pos2, &cmp_ints_ex, NULL, NULL), 
-			"Failed to find 2 in the tree");
-	ck_assert_msg(btree_find_ex(t, pos3, &cmp_ints_ex, NULL, NULL),
-		       	"Failed to find -10 in the tree");
-	ck_assert_msg(btree_find_ex(t, pos4, &cmp_ints_ex, NULL, NULL), 
-			"Failed to find -5 in the tree");
-
-	ck_assert_msg(!btree_find_ex(t, &neg1, &cmp_ints_ex, NULL, NULL), "Found 20 in the tree");
-	ck_assert_msg(!btree_find_ex(t, &neg2, &cmp_ints_ex, NULL, NULL), "Found 1 in the tree");
-	ck_assert_msg(!btree_find_ex(t, &neg3, &cmp_ints_ex, NULL, NULL), "Found -100 in the tree");
-	ck_assert_msg(!btree_find_ex(t, &neg4, &cmp_ints_ex, NULL, NULL), "Found -7 in the tree");
-
-	btree_destroy_ex(t, &free);
-}
-END_TEST;
-
 START_TEST(test_varsearch)
 {
 	struct btree *t = btree_create(mkint(0));
@@ -281,6 +238,112 @@ START_TEST(test_unlink_and_destroy)
 }
 END_TEST;
 
+START_TEST(test_delete)
+{
+	int root = 0;
+	int i1 = -5;
+	int i2 = 5;
+	int i3 = -10;
+	int i4 = -3;
+	int i5 = -4;
+	int i6 = -2;
+	int i7 = 10;
+
+	struct btree *t = btree_create(&root);
+	ck_assert_msg(t != NULL, "Failed to create a tree");
+
+	ck_assert_msg(btree_insert(t, &i1, &cmp_ints), "Failed to insert -5 into the tree");
+	ck_assert_msg(btree_insert(t, &i2, &cmp_ints), "Failed to insert 5 into the tree");
+	ck_assert_msg(btree_insert(t, &i3, &cmp_ints), "Failed to insert -10 into the tree");
+	ck_assert_msg(btree_insert(t, &i4, &cmp_ints), "Failed to insert -3 into the tree");
+	ck_assert_msg(btree_insert(t, &i5, &cmp_ints), "Failed to insert -4 into the tree");
+	ck_assert_msg(btree_insert(t, &i6, &cmp_ints), "Failed to insert -2 into the tree");
+	ck_assert_msg(btree_insert(t, &i7, &cmp_ints), "Failed to insert 10 into the tree");
+
+	/* Delete a leaf. */
+	ck_assert_msg(btree_delete(t, &i3, &cmp_ints, NULL, NULL),
+			"Failed to delete a leaf from the tree (-10)");
+	ck_assert_msg(btree_find(t, &root, &cmp_ints, NULL),
+			"After a leaf deletion, 0 (root) is not in the tree");
+	ck_assert_msg(btree_find(t, &i1, &cmp_ints, NULL),
+			"After a leaf deletion, -5 (i1) is not in the tree");
+	ck_assert_msg(btree_find(t, &i2, &cmp_ints, NULL), 
+			"After a leaf deletion, 5 (i2) is not in the tree");
+	ck_assert_msg(!btree_find(t, &i3, &cmp_ints, NULL),
+			"After a leaf deletion, -10 (i3) is still in the tree");
+	ck_assert_msg(btree_find(t, &i4, &cmp_ints, NULL),
+			"After a leaf deletion, -3 (i4) is not in the tree");
+	ck_assert_msg(btree_find(t, &i5, &cmp_ints, NULL),
+			"After a leaf deletion, -5 (i5) is not in the tree");
+	ck_assert_msg(btree_find(t, &i6, &cmp_ints, NULL),
+			"After a leaf deletion, -2 (i6) is not in the tree");
+	ck_assert_msg(btree_find(t, &i7, &cmp_ints, NULL),
+			"After a leaf deletion, 10 (i7) is not in the tree");
+
+	/* Delete a node with a single child. */
+	ck_assert_msg(btree_delete(t, &i2, &cmp_ints, NULL, NULL),
+			"Failed to delete a node with a child (5)");
+	ck_assert_msg(btree_find(t, &root, &cmp_ints, NULL),
+			"After a single-child node deletion, 0 (root) is not in the tree");
+	ck_assert_msg(btree_find(t, &i1, &cmp_ints, NULL),
+			"After a single-child node deletion, -5 (i1) is not in the tree");
+	ck_assert_msg(!btree_find(t, &i2, &cmp_ints, NULL), 
+			"After a single-child node deletion, 5 (i2) is still in the tree");
+	ck_assert_msg(!btree_find(t, &i3, &cmp_ints, NULL),
+			"After a single-child node deletion, -10 (i3) is still in the tree");
+	ck_assert_msg(btree_find(t, &i4, &cmp_ints, NULL),
+			"After a single-child node deletion, -3 (i4) is not in the tree");
+	ck_assert_msg(btree_find(t, &i5, &cmp_ints, NULL),
+			"After a single-child node deletion, -5 (i5) is not in the tree");
+	ck_assert_msg(btree_find(t, &i6, &cmp_ints, NULL),
+			"After a single-child node deletion, -2 (i6) is not in the tree");
+	ck_assert_msg(btree_find(t, &i7, &cmp_ints, NULL),
+			"After a single-child node deletion, 10 (i7) is not in the tree");
+
+	/* Delete a node with two children. */
+	ck_assert_msg(btree_delete(t, &i4, &cmp_ints, NULL, NULL),
+			"Failed to delete a node with two children (-3)");
+	ck_assert_msg(btree_find(t, &root, &cmp_ints, NULL),
+			"After a two-child node deletion, 0 (root) is not in the tree");
+	ck_assert_msg(btree_find(t, &i1, &cmp_ints, NULL),
+			"After a two-child node deletion, -5 (i1) is not in the tree");
+	ck_assert_msg(!btree_find(t, &i2, &cmp_ints, NULL), 
+			"After a two-child node deletion, 5 (i2) is still in the tree");
+	ck_assert_msg(!btree_find(t, &i3, &cmp_ints, NULL),
+			"After a two-child node deletion, -10 (i3) is still in the tree");
+	ck_assert_msg(!btree_find(t, &i4, &cmp_ints, NULL),
+			"After a two-child node deletion, -3 (i4) is still in the tree");
+	ck_assert_msg(btree_find(t, &i5, &cmp_ints, NULL),
+			"After a two-child node deletion, -5 (i5) is not in the tree");
+	ck_assert_msg(btree_find(t, &i6, &cmp_ints, NULL),
+			"After a two-child node deletion, -2 (i6) is not in the tree");
+	ck_assert_msg(btree_find(t, &i7, &cmp_ints, NULL),
+			"After a two-child node deletion, 10 (i7) is not in the tree");
+
+	/* Delete the root. */
+	ck_assert_msg(btree_delete(t, &root, &cmp_ints, NULL, NULL),
+			"Failed to delete the root from the tree");
+	ck_assert_msg(!btree_find(t, &root, &cmp_ints, NULL),
+			"After the root deletion, 0 (root) is still in the tree");
+	ck_assert_msg(btree_find(t, &i1, &cmp_ints, NULL),
+			"After the root deletion, -5 (i1) is not in the tree");
+	ck_assert_msg(!btree_find(t, &i2, &cmp_ints, NULL), 
+			"After the root deletion, 5 (i2) is still in the tree");
+	ck_assert_msg(!btree_find(t, &i3, &cmp_ints, NULL),
+			"After the root deletion, -10 (i3) is still in the tree");
+	ck_assert_msg(!btree_find(t, &i4, &cmp_ints, NULL),
+			"After the root deletion, -3 (i4) is still in the tree");
+	ck_assert_msg(btree_find(t, &i5, &cmp_ints, NULL),
+			"After the root deletion, -5 (i5) is not in the tree");
+	ck_assert_msg(btree_find(t, &i6, &cmp_ints, NULL),
+			"After the root deletion, -2 (i6) is not in the tree");
+	ck_assert_msg(btree_find(t, &i7, &cmp_ints, NULL),
+			"After the root deletion, 10 (i7) is not in the tree");
+
+	btree_destroy(t);
+}
+END_TEST;
+
 Suite *
 btree_suite(void)
 {
@@ -289,11 +352,11 @@ btree_suite(void)
 	/* Core tests. */
 	TCase *core_tests = tcase_create("Core");
 	tcase_add_test(core_tests, test_insert_and_find);
-	tcase_add_test(core_tests, test_insert_and_find_ex);
 	tcase_add_test(core_tests, test_varsearch);
 	tcase_add_test(core_tests, test_inorder);
 	tcase_add_test(core_tests, test_inorder_rev);
 	tcase_add_test(core_tests, test_unlink_and_destroy);
+	tcase_add_test(core_tests, test_delete);
 
 	suite_add_tcase(res, core_tests);
 
