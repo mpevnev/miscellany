@@ -248,6 +248,22 @@ btree_link_dir(struct btree *tree, struct btree *link)
 	return -1;
 }
 
+#include <stdio.h>
+
+size_t
+btree_size(struct btree *tree)
+{
+	if (tree == NULL) return 0;
+
+	size_t res = 0;
+	struct btt trav;
+	btt_init(&trav, tree, BTT_INORDER);
+	for (; !btt_done(&trav); btt_next_node(&trav)) res++;
+	btt_fin(&trav);
+
+	return res;
+}
+
 /* ---------- searching ---------- */
 
 int

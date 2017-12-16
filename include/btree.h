@@ -124,6 +124,9 @@ btree_is_a_leaf(struct btree *);
 extern int
 btree_link_dir(struct btree *tree, struct btree *link);
 
+extern size_t
+btree_size(struct btree *tree);
+
 /* ---------- searching ---------- */
 
 /* Return 1 if the element was found (and fill res with it), return 0 and do
