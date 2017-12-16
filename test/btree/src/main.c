@@ -6,16 +6,6 @@
 
 #include "test.h"
 
-START_TEST(test_create_and_destroy)
-{
-	struct btree *t1 = btree_create(mkint(1));
-	struct btree *t2 = btree_create(mkint(2));
-
-	ck_assert_int_eq(*(int *)btree_data(t1), 1);
-	ck_assert_int_eq(*(int *)btree_data(t2), 2);
-}
-END_TEST;
-
 START_TEST(test_insert_and_find)
 {
 	struct btree *t = btree_create(mkint(0));
@@ -26,10 +16,10 @@ START_TEST(test_insert_and_find)
 	void *pos3 = mkint(-10);
 	void *pos4 = mkint(-5);
 
-	void *neg1 = mkint(20);
-	void *neg2 = mkint(1);
-	void *neg3 = mkint(-100);
-	void *neg4 = mkint(-7);
+	int neg1 = 20;
+	int neg2 = 1;
+	int neg3 = -100;
+	int neg4 = -7;
 
 	struct btree *n1 = btree_insert(t, pos1, &cmp_ints);
 	struct btree *n2 = btree_insert(t, pos2, &cmp_ints);
@@ -46,10 +36,12 @@ START_TEST(test_insert_and_find)
 	ck_assert_msg(btree_find(t, pos3, &cmp_ints, NULL), "Failed to find -10 in the tree");
 	ck_assert_msg(btree_find(t, pos4, &cmp_ints, NULL), "Failed to find -5 in the tree");
 
-	ck_assert_msg(!btree_find(t, neg1, &cmp_ints, NULL), "Found 20 in the tree");
-	ck_assert_msg(!btree_find(t, neg2, &cmp_ints, NULL), "Found 1 in the tree");
-	ck_assert_msg(!btree_find(t, neg3, &cmp_ints, NULL), "Found -100 in the tree");
-	ck_assert_msg(!btree_find(t, neg4, &cmp_ints, NULL), "Found -7 in the tree");
+	ck_assert_msg(!btree_find(t, &neg1, &cmp_ints, NULL), "Found 20 in the tree");
+	ck_assert_msg(!btree_find(t, &neg2, &cmp_ints, NULL), "Found 1 in the tree");
+	ck_assert_msg(!btree_find(t, &neg3, &cmp_ints, NULL), "Found -100 in the tree");
+	ck_assert_msg(!btree_find(t, &neg4, &cmp_ints, NULL), "Found -7 in the tree");
+
+	btree_destroy_ex(t, &free);
 }
 END_TEST;
 
@@ -63,10 +55,10 @@ START_TEST(test_insert_and_find_ex)
 	void *pos3 = mkint(-10);
 	void *pos4 = mkint(-5);
 
-	void *neg1 = mkint(20);
-	void *neg2 = mkint(1);
-	void *neg3 = mkint(-100);
-	void *neg4 = mkint(-7);
+	int neg1 = 20;
+	int neg2 = 1;
+	int neg3 = -100;
+	int neg4 = -7;
 
 	struct btree *n1 = btree_insert_ex(t, pos1, &cmp_ints_ex, NULL);
 	struct btree *n2 = btree_insert_ex(t, pos2, &cmp_ints_ex, NULL);
@@ -87,10 +79,12 @@ START_TEST(test_insert_and_find_ex)
 	ck_assert_msg(btree_find_ex(t, pos4, &cmp_ints_ex, NULL, NULL), 
 			"Failed to find -5 in the tree");
 
-	ck_assert_msg(!btree_find_ex(t, neg1, &cmp_ints_ex, NULL, NULL), "Found 20 in the tree");
-	ck_assert_msg(!btree_find_ex(t, neg2, &cmp_ints_ex, NULL, NULL), "Found 1 in the tree");
-	ck_assert_msg(!btree_find_ex(t, neg3, &cmp_ints_ex, NULL, NULL), "Found -100 in the tree");
-	ck_assert_msg(!btree_find_ex(t, neg4, &cmp_ints_ex, NULL, NULL), "Found -7 in the tree");
+	ck_assert_msg(!btree_find_ex(t, &neg1, &cmp_ints_ex, NULL, NULL), "Found 20 in the tree");
+	ck_assert_msg(!btree_find_ex(t, &neg2, &cmp_ints_ex, NULL, NULL), "Found 1 in the tree");
+	ck_assert_msg(!btree_find_ex(t, &neg3, &cmp_ints_ex, NULL, NULL), "Found -100 in the tree");
+	ck_assert_msg(!btree_find_ex(t, &neg4, &cmp_ints_ex, NULL, NULL), "Found -7 in the tree");
+
+	btree_destroy_ex(t, &free);
 }
 END_TEST;
 
@@ -134,6 +128,8 @@ START_TEST(test_varsearch)
 	ck_assert_msg(btree_outermost(t, 1) == n5, "Wrong rightmost node for the entire tree");
 	ck_assert_msg(btree_outermost(n2, 0) == n3, "Wrong leftmost node for the 10 subtree");
 	ck_assert_msg(btree_outermost(n2, 1) == n5, "Wrong rightmost node for the 10 subtree");
+
+	btree_destroy_ex(t, &free);
 }
 END_TEST;
 
@@ -184,6 +180,8 @@ START_TEST(test_inorder)
 		       "element is not 10");
 	ck_assert_msg(inttree_eq(btt_next_node(&trav), i5), "After rewind, the sixth "
 		       "element is not 20");
+
+	btree_destroy_ex(t, &free);
 }
 END_TEST;
 
@@ -233,6 +231,8 @@ START_TEST(test_inorder_rev)
 			"the fifth element is not -5");
 	ck_assert_msg(inttree_eq(btt_next_node(&trav), i1), "After rewind "
 			"the last element is not -10");
+
+	btree_destroy_ex(t, &free);
 }
 END_TEST;
 
@@ -243,7 +243,6 @@ btree_suite(void)
 
 	/* Core tests. */
 	TCase *core_tests = tcase_create("Core");
-	tcase_add_test(core_tests, test_create_and_destroy);
 	tcase_add_test(core_tests, test_insert_and_find);
 	tcase_add_test(core_tests, test_insert_and_find_ex);
 	tcase_add_test(core_tests, test_varsearch);
