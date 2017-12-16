@@ -71,7 +71,7 @@ btt_next_inorder(struct btt *btt)
 		btt->cur = cur->link[1];
 	} else {
 		cur = cur->link[1];
-		while (!cur->thread[0] && cur->link[0] != NULL) 
+		while (cur != NULL && !cur->thread[0] && cur->link[0] != NULL) 
 			cur = cur->link[0];
 		btt->cur = cur;
 	}
@@ -86,7 +86,7 @@ btt_next_inorder_rev(struct btt *btt)
 		btt->cur = cur->link[0];
 	} else {
 		cur = cur->link[0];
-		while (!cur->thread[1] && cur->link[1] != NULL) 
+		while (cur != NULL && !cur->thread[1] && cur->link[1] != NULL) 
 			cur = cur->link[1];
 		btt->cur = cur;
 	}
