@@ -208,6 +208,7 @@ btree_link(struct btree *tree, int dir)
 int
 btree_has_children(struct btree *tree)
 {
+	if (tree == NULL) return 0;
 	for (int i = 0; i < 2; i++) {
 		if (tree->thread[i]) continue;
 		if (tree->link[i] == NULL) continue;
@@ -217,8 +218,31 @@ btree_has_children(struct btree *tree)
 }
 
 int
+btree_has_child(struct btree *tree, int dir)
+{
+	if (tree == NULL) return 0;
+	dir = !!dir;
+	return !tree->thread[dir] && tree->link[dir] != NULL;
+}
+
+int
+btree_num_children(struct btree *tree)
+{
+	return btree_has_child(tree, 0) + btree_has_child(tree, 1);
+}
+
+int
+btree_is_a_leaf(struct btree *tree)
+{
+	if (tree == NULL) return 1;
+	return (tree->thread[0] || tree->link[0] == NULL)
+		&& (tree->thread[1] || tree->link[1] == NULL);
+}
+
+int
 btree_link_dir(struct btree *tree, struct btree *link)
 {
+	if (tree == NULL) return -1;
 	for (int i = 0; i < 2; i++)
 		if (tree->link[i] == link) return i;
 	return -1;
@@ -374,112 +398,79 @@ btree_insert_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *cmp_a
 	INSERT_BODY(tree, data, cmp, cmp(data, tree->data, cmp_arg));
 }
 
-#if 0
-struct btree *
-btree_insert(struct btree *tree, void *data, btree_cmp_fn cmp)
-{
-	while(1) {
-		int cmp_res = cmp(data, tree->data);
-		int dir = cmp_res > 0; /* 0 for left, 1 for right. */
-		if (tree->child[dir] == NULL) {
-			struct btree *res = btree_create(data);
-			if (res == NULL) return NULL;
-			tree->child[dir] = res;
-			res->parent = tree;
-			return res;
-		} else {
-			tree = tree->child[dir];
-		}
-	}
-}
-
-struct btree *
-btree_insert_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *arg)
-{
-	while(1) {
-		int cmp_res = cmp(data, tree->data, arg);
-		int dir = cmp_res > 0; /* 0 for left, 1 for right. */
-		if (tree->child[dir] == NULL) {
-			struct btree *res = btree_create(data);
-			if (res == NULL) return NULL;
-			tree->child[dir] = res;
-			res->parent = tree;
-			return res;
-		} else {
-			tree = tree->child[dir];
-		}
-	}
-}
-
 /* ---------- deletion ---------- */
 
-/* A helper macro to avoid code duplication. The only thing that's different 
- * between 'btree_delete' and 'btree_delete_ex' is the first line, the rest is
- * the same. */
-#define DELETE_BODY(tree, to_delete, tree_after, deleted) \
+#define DELETE_BODY(tree, data, cmp, tree_after, deleted, find) \
 { \
-	if (to_delete == NULL) { \
-		*tree_after = tree; \
-		return 0; \
-	} \
+	if (tree_after != NULL) *tree_after = tree; \
+	if (deleted != NULL) *deleted = NULL; \
+	if (tree == NULL) return 0; \
  \
-	/* The easiest case - the node is a leaf. */ \
+	struct btree *to_delete = find; \
+	if (to_delete == NULL) return 0; \
+	void *old_data = to_delete->data; \
+ \
+	/* The simplest case - the node is a leaf. */ \
 	if (btree_is_a_leaf(to_delete)) { \
 		btree_unlink(to_delete); \
-		*deleted = to_delete->data; \
-		if (to_delete == tree)  \
-			*tree_after = NULL; \
-		else \
-			*tree_after = tree; \
-		free(to_delete); \
+		if (tree_after != NULL) *tree_after = tree == to_delete ? NULL : tree; \
+		if (deleted != NULL) *deleted = old_data; \
 		return 1; \
 	} \
  \
-	/* Harder cases - the node either has a predecessor or a successor. */ \
-	struct btree *predecessor = btree_predecessor(to_delete); \
-	if (predecessor != NULL) { \
-		btree_unlink(predecessor); \
-		void *pred_data = predecessor->data; \
-		free(predecessor); \
+	/* A bit harder - the node has a single child. */ \
+	if (btree_num_children(to_delete) == 1) { \
+		int child_dir = btree_has_child(to_delete, 1); \
+		/* Simply replace the node with its child. */ \
+		struct btree *child = to_delete->link[child_dir]; \
+		struct btree *parent = btree_parent(to_delete); \
+		if (parent == NULL) { \
+			child->thread[!child_dir] = 0; \
+			child->link[!child_dir] = 0; \
+			if (tree_after != NULL) *tree_after = child; \
+			if (deleted != NULL) *deleted = old_data; \
+			free(to_delete); \
+			return 1; \
+		} else { \
+			int dir_to_here = btree_link_dir(parent, to_delete); \
+			parent->thread[dir_to_here] = 0; \
+			parent->link[dir_to_here] = child; \
+			child->thread[!child_dir] = 1; \
+			child->link[!child_dir] = parent; \
+			free(to_delete); \
+			if (tree_after != NULL) *tree_after = parent; \
+			if (deleted != NULL) *deleted = old_data; \
+			return 1; \
+		} /* if parent is null */ \
+	} /* if the node has one child */ \
  \
-		void *old_data = to_delete->data; \
-		to_delete->data = pred_data; \
-		*tree_after = tree; \
-		*deleted = old_data; \
-		return 1; \
-	} \
- \
-	/* If we got here, the node has a successor: it is not a leaf and has \
-	 * no left subnodes, therefore it has a right subnode. */ \
-	struct btree *successor = btree_successor(to_delete); \
-	btree_unlink(successor); \
-	void *succ_data = successor->data; \
-	free(successor); \
- \
-	void *old_data = to_delete->data; \
-	to_delete->data = succ_data; \
-	*tree_after = tree; \
-	*deleted = old_data; \
+	/* The last case - both children are present. Pretty easy to do, \
+	 * actually - find inorder predecessor and replace the node with it. */ \
+	struct btree *left_child = to_delete->link[0]; \
+	struct btree *predecessor = btree_outermost(left_child, 1); \
+	btree_unlink(predecessor); \
+	to_delete->data = predecessor->data; \
+	if (tree_after != NULL) *tree_after = tree; \
+	if (deleted != NULL) *deleted = old_data; \
+	free(predecessor); \
 	return 1; \
-}
+} \
 
 extern int
 btree_delete(struct btree *tree, void *data, btree_cmp_fn cmp, 
 		struct btree **tree_after, void **deleted)
 {
-	struct btree *to_delete = btree_find_node(tree, data, cmp);
-	DELETE_BODY(tree, to_delete, tree_after, deleted);
+	DELETE_BODY(tree, data, cmp, tree_after, deleted, 
+			btree_find_node(tree, data, cmp));
 }
 
 extern int
 btree_delete_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *arg,
 		struct btree **tree_after, void **deleted)
 {
-	struct btree *to_delete = btree_find_node_ex(tree, data, cmp, arg);
-	DELETE_BODY(tree, to_delete, tree_after, deleted);
+	DELETE_BODY(tree, data, cmp, tree_after, deleted,
+			btree_find_node_ex(tree, data, cmp, arg));
 }
-
-#endif
 
 /* ---------- other ---------- */
 
@@ -489,6 +480,7 @@ btree_unlink(struct btree *tree)
 	struct btree *left = btree_outermost(tree, 0);
 	struct btree *right = btree_outermost(tree, 1);
 
+	/* Make the outer tree forget about the inner. */
 	struct btree *before_left = left->link[0];
 	struct btree *after_right = right->link[1];
 	if (before_left != NULL && (before_left->thread[1] || before_left->link[1] == tree)) {
@@ -500,6 +492,7 @@ btree_unlink(struct btree *tree)
 		after_right->link[0] = before_left;
 	}
 
+	/* Make the inner tree a standalone tree. */
 	left->thread[0] = 0;
 	left->link[0] = NULL;
 	right->thread[1] = 0;

@@ -110,6 +110,15 @@ btree_link(struct btree *tree, int dir);
 extern int
 btree_has_children(struct btree *);
 
+extern int
+btree_has_child(struct btree *, int dir);
+
+extern int
+btree_num_children(struct btree *);
+
+extern int
+btree_is_a_leaf(struct btree *);
+
 /* Return the index of the link in the links array of the given tree, or -1 if
  * the link is not there. */
 extern int
@@ -167,18 +176,20 @@ btree_insert_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *arg);
 
 /* ---------- deletion ---------- */
 
-/* There's no function to delete subtrees - this is done with btree_destroy[_ex]. */
+/* There's no function to delete subtrees - this is done either with
+ * btree_destroy family or btree_unlink. */
 
-/* Return 1 if the data was found in the tree, 0 otherwise. Fills 'tree_after'
- * with the tree after the deletion of the data (might be NULL if the last node
- * in the tree was deleted). Fills 'deleted' with the data from the tree that
- * was deleted (not from the 'data' argument! they might be different depending
- * on what 'cmp' function does). */
+/* + Return 1 if the data was found in the tree, 0 otherwise. 
+ * + Fill 'tree_after' * with the tree after the deletion of the data (might be
+ * NULL if the last node in the tree was deleted). Pass NULL to avoid filling.
+ * + Fill 'deleted' with the data from the tree that was deleted (not from the
+ * 'data' argument! they might be different depending on what 'cmp' function
+ * does). Pass NULL to avoid filling. */
 extern int
 btree_delete(struct btree *tree, void *data, btree_cmp_fn cmp, 
 		struct btree **tree_after, void **deleted);
 
-/* Ditto. */
+/* Ditto, but cmp takes an extra argument. */
 extern int
 btree_delete_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *arg,
 		struct btree **tree_after, void **deleted);
