@@ -138,6 +138,24 @@ btt_init(struct btt *btt, struct btree *tree, enum btt_type type)
 	} /* switch type */
 }
 
+int
+btt_done(struct btt *btt)
+{
+	return btt->cur == NULL;
+}
+
+void *
+btt_this(struct btt *btt)
+{
+	return btt->cur->data;
+}
+
+struct btree *
+btt_this_node(struct btt *btt)
+{
+	return btt->cur;
+}
+
 void *
 btt_next(struct btt *btt)
 {
@@ -174,6 +192,36 @@ btt_fin(struct btt *btt)
 }
 
 /* ---------- information retrieval ---------- */
+
+void *
+btree_data(struct btree *tree)
+{
+	return tree->data;
+}
+
+struct btree *
+btree_left(struct btree *tree)
+{
+	return tree->link[0];
+}
+
+struct btree *
+btree_right(struct btree *tree)
+{
+	return tree->link[1];
+}
+
+int
+btree_thread(struct btree *tree, int dir)
+{
+	return tree->thread[!!dir];
+}
+
+struct btree *
+btree_link(struct btree *tree, int dir)
+{
+	return tree->link[!!dir];
+}
 
 int
 btree_has_children(struct btree *tree)
