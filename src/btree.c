@@ -415,6 +415,7 @@ btree_insert_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *cmp_a
 		btree_unlink(to_delete); \
 		if (tree_after != NULL) *tree_after = tree == to_delete ? NULL : tree; \
 		if (deleted != NULL) *deleted = old_data; \
+		free(to_delete); \
 		return 1; \
 	} \
  \
