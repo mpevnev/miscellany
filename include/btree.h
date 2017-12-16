@@ -64,9 +64,9 @@ btt_create(struct btree *tree, enum btt_type type);
 extern void
 btt_init(struct btt *btt, struct btree *tree, enum btt_type type);
 
-#define btt_done(btt) (btt->cur == NULL)
-#define btt_this(btt) (btt->cur->data)
-#define btt_this_node(btt) (btt->cur)
+#define btt_done(btt) ((btt)->cur == NULL)
+#define btt_this(btt) ((btt)->cur->data)
+#define btt_this_node(btt) ((btt)->cur)
 
 extern void *
 btt_next(struct btt *);
@@ -87,11 +87,11 @@ btt_fin(struct btt *);
 
 /* ---------- accessing struct members and information retrieval ---------- */
 
-#define btree_data(tree) (tree->data)
-#define btree_left(tree) (tree->child[0])
-#define btree_right(tree) (tree->child[1])
-#define	btree_thread(tree, dir) (tree->is_thread[!!dir])
-#define btree_link(tree, dir) (tree->child[!!dir])
+#define btree_data(tree) ((tree)->data)
+#define btree_left(tree) ((tree)->child[0])
+#define btree_right(tree) ((tree)->child[1])
+#define	btree_thread(tree, dir) ((tree)->is_thread[!!(dir)])
+#define btree_link(tree, dir) ((tree)->child[!!(dir)])
 
 extern int
 btree_has_children(struct btree *);
