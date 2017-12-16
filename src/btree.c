@@ -486,11 +486,11 @@ btree_unlink(struct btree *tree)
 
 	struct btree *before_left = left->link[0];
 	struct btree *after_right = right->link[1];
-	if (before_left != NULL && before_left->thread[1]) {
+	if (before_left != NULL && (before_left->thread[1] || before_left->link[1] == tree)) {
 		before_left->thread[1] = after_right != NULL;
 		before_left->link[1] = after_right;
 	}
-	if (after_right != NULL && after_right->thread[0]) {
+	if (after_right != NULL && (after_right->thread[0] || after_right->link[0] == tree)) {
 		after_right->thread[0] = before_left != NULL;
 		after_right->link[0] = before_left;
 	}
