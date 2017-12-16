@@ -481,15 +481,22 @@ btree_delete_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *arg,
 void
 btree_unlink(struct btree *tree)
 {
-	struct btree *left = btree_after_outermost(tree, 0);
-	struct btree *right = btree_after_outermost(tree, 1);
+	struct btree *left = btree_outermost(tree, 0);
+	struct btree *right = btree_outermost(tree, 1);
 
-	if (left != NULL && left->link[1] == tree) {
-		left->thread[1] = right != NULL;
-		left->link[1] = right;
+	struct btree *before_left = left->link[0];
+	struct btree *after_right = right->link[1];
+	if (before_left != NULL && before_left->thread[1]) {
+		before_left->thread[1] = after_right != NULL;
+		before_left->link[1] = after_right;
 	}
-	if (right != NULL && right->link[0] == tree) {
-		right->thread[0] = left != NULL;
-		right->link[0] = left;
+	if (after_right != NULL && after_right->thread[0]) {
+		after_right->thread[0] = before_left != NULL;
+		after_right->link[0] = before_left;
 	}
+
+	left->thread[0] = 0;
+	left->link[0] = NULL;
+	right->thread[1] = 0;
+	right->link[1] = NULL;
 }
