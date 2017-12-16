@@ -247,6 +247,7 @@ btree_find_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *arg, vo
 struct btree *
 btree_find_node(struct btree *tree, void *data, btree_cmp_fn cmp)
 {
+	if (tree == NULL) return NULL;
 	while(1) {
 		int cmp_res = cmp(data, tree->data);
 		if (cmp_res == 0) return tree;
@@ -260,6 +261,7 @@ btree_find_node(struct btree *tree, void *data, btree_cmp_fn cmp)
 struct btree *
 btree_find_node_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *cmp_arg)
 {
+	if (tree == NULL) return NULL;
 	while(1) {
 		int cmp_res = cmp(data, tree->data, cmp_arg);
 		if (cmp_res == 0) return tree;
@@ -273,6 +275,7 @@ btree_find_node_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *cm
 struct btree *
 btree_parent(struct btree *tree)
 {
+	if (tree == NULL) return NULL;
 	/* If the subtree is a left node, then the parent is the successor of
 	 * its rightmost node. If the subtree is a right node, then the parent
 	 * is the predecessor of its leftmost node. */
@@ -305,6 +308,7 @@ btree_successor(struct btree *tree)
 struct btree *
 btree_outermost(struct btree *tree, int dir)
 {
+	if (tree == NULL) return NULL;
 	dir = !!dir;
 	while (!tree->thread[dir] && tree->link[dir] != NULL)
 		tree = tree->link[dir];
@@ -314,6 +318,7 @@ btree_outermost(struct btree *tree, int dir)
 struct btree *
 btree_after_outermost(struct btree *tree, int dir)
 {
+	if (tree == NULL) return NULL;
 	struct btree *outer = btree_outermost(tree, dir);
 	return outer->link[dir];
 }
