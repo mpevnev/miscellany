@@ -2,7 +2,7 @@
 BUILDDIR=build
 VPATH=src:$(BUILDDIR)
 CFLAGS=-Wall -Iinclude -I../../include -ggdb `pkg-config --cflags check`
-LDFLAGS=-L../../
+LDFLAGS=-L../../ -rpath ../../
 LDLIBS=-lmiscellany `pkg-config --libs check`
 
 TARGETS=main.o
