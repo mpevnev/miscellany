@@ -175,12 +175,14 @@ lslice_end(struct lslice *);
 extern int
 lslice_empty(struct lslice *);
 
-/* Convert a slice to a list, leaving the original list untouched. */
+/* Convert a slice to a list, leaving the original list untouched.
+ * Return NULL on an OOM condition. */
 extern struct list *
 lslice_to_list(struct lslice *);
 
 /* Extract a slice from its list, destructively (which means that the slice
- * becomes invalid for most operations save traversing). */
+ * becomes invalid for most operations save traversing).
+ * Return NULL on an OOM condition. */
 extern struct list *
 lslice_extract(struct lslice *);
 
@@ -215,7 +217,7 @@ lslice_set_end_to_start(struct lslice *);
 extern size_t
 lslice_shift(struct lslice *, enum lslice_dir end, size_t by, enum lslice_dir dir);
 
-/* Same, but shift while cond(current_list_element_data) is true. */
+/* Same, but shift while cond(current_list_element->data) is true. */
 extern size_t
 lslice_shift_while(struct lslice *, enum lslice_dir end, enum lslice_dir dir,
 		list_pred cond);
@@ -227,15 +229,15 @@ lslice_shift_while_ex(struct lslice *, enum lslice_dir end, enum lslice_dir dir,
 
 /* ---------- other ---------- */
 
-/* Sort the list in-place in ascending order, if 'desc' is 0, otherwise sort in
- * descending order. 
+/* If 'desc' is false, sort the list in ascending order, otherwise sort it in
+ * descending order.
  * 'cmp' should return a negative value if 'left < right', 0 if they are equal,
  * and a positive value if 'left > right'. */
-void
+struct list *
 list_sort(struct list *, int (*cmp)(void *left, void *right), int desc);
 
 /* Same, but 'cmp' takes an extra argument. */
-void
+struct list *
 list_sort_ex(struct list *, int (*cmp)(void *left, void *right, void *external_arg),
 		void *external_arg);
 
