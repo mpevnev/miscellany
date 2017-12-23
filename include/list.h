@@ -144,7 +144,7 @@ list_find_ex(struct list *, list_pred_ex cond, void *arg);
 /* If 'cover_all' is true, the resulting slice will contain all of the list,
  * otherwise it'll contain just the first element. 
  * Return NULL on an OOM condition or if the list is empty. */
-extern struct list_slice *
+extern struct lslice *
 lslice_create(struct list *, int cover_all);
 
 /* A non-allocating version of the above. 
@@ -152,7 +152,7 @@ lslice_create(struct list *, int cover_all);
 extern int 
 lslice_init(struct lslice *, struct list *, int cover_all);
 
-extern struct list_slice *
+extern struct lslice *
 lslice_copy(struct lslice *);
 
 extern void
