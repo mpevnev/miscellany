@@ -114,11 +114,11 @@ list_last(struct list *);
 extern int
 list_empty(struct list *);
 
-/* Return NULL if the list is shorter than 'n'. */
+/* Return NULL if the list is shorter than 'n'. Zero-indexed. */
 extern struct list_elem *
 list_nth(struct list *, size_t n);
 
-/* Return NULL if the list is shorter than 'n'. */
+/* Return NULL if the list is shorter than 'n'. Zero-indexed. */
 extern struct list_elem *
 list_nth_from_back(struct list *, size_t n);
 
@@ -131,20 +131,26 @@ list_next(struct list_elem *);
 extern struct list_elem *
 list_prev(struct list_elem *);
 
+/* Find the first element upon which cond(elem->data) returns true. */
 extern struct list_elem *
 list_find(struct list *, list_pred cond);
 
+/* Find the first element upon which cond(elem->data, arg) returns true. */
 extern struct list_elem *
 list_find_ex(struct list *, list_pred_ex cond, void *arg);
 
 /* ---------- slicing ---------- */
 
+/* If 'cover_all' is true, the resulting slice will contain all of the list,
+ * otherwise it'll contain just the first element. 
+ * Return NULL on an OOM condition or if the list is empty. */
 extern struct list_slice *
-lslice_create(struct list *);
+lslice_create(struct list *, int cover_all);
 
-/* A non-allocating version of the above. */
-extern void
-lslice_init(struct lslice *, struct list *);
+/* A non-allocating version of the above. 
+ * Return 0 if the list is empty, 1 otherwise. */
+extern int 
+lslice_init(struct lslice *, struct list *, int cover_all);
 
 extern void
 lslice_destroy(struct lslice *);
