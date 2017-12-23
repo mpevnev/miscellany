@@ -152,6 +152,12 @@ lslice_create(struct list *, int cover_all);
 extern int 
 lslice_init(struct lslice *, struct list *, int cover_all);
 
+extern struct list_slice *
+lslice_copy(struct lslice *);
+
+extern void
+lslice_init_from(struct lslice *init, struct lslice *from);
+
 extern void
 lslice_destroy(struct lslice *);
 
@@ -168,7 +174,8 @@ lslice_empty(struct lslice *);
 extern struct list *
 lslice_to_list(struct lslice *);
 
-/* Extract a slice from its list, destructively. */
+/* Extract a slice from its list, destructively (which means that the slice
+ * becomes invalid for most operations save traversing). */
 extern struct list *
 lslice_extract(struct lslice *);
 
