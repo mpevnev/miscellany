@@ -66,19 +66,42 @@ list_insert_after(struct list *, struct list_elem *after, void *data);
 extern int
 list_insert_before(struct list *, struct list_elem *before, void *data);
 
+/* Append a list to another list, creating a copy of the list to be appended. */
 extern int
 list_append(struct list *to, struct list *append);
 
+/* Append a list destructively. The resulting list will reuse elements of the
+ * 'append' argument, avoiding copying it.
+ */
+extern void
+list_append_d(struct list *to, struct list *append);
+
+/* Prepend a list to another list, creating a copy of the list to be prepended. */
 extern int
 list_prepend(struct list *to, struct list *prepend);
 
-/* ---------- popping ---------- */
+/* Prepend a list destructively. The resulting list will reuse elements of the
+ * 'prepend' argument, avoiding copying it.
+ */
+extern void
+list_prepend_d(struct list *to, struct list *prepend);
+
+/* ---------- removal ---------- */
 
 extern void *
 list_pop(struct list *);
 
 extern void *
 list_pop_back(struct list *);
+
+extern void 
+list_clear(struct list *);
+
+extern void
+list_clear_ex(struct list *, void (*destroyer)(void *data));
+
+extern void 
+list_clear_exx(struct list *, void (*destroyer)(void *data, void *arg), void *arg);
 
 /* ---------- information retrieval ---------- */
 
@@ -88,9 +111,14 @@ list_first(struct list *);
 extern struct list_elem *
 list_last(struct list *);
 
+extern int
+list_empty(struct list *);
+
+/* Return NULL if the list is shorter than 'n'. */
 extern struct list_elem *
 list_nth(struct list *, size_t n);
 
+/* Return NULL if the list is shorter than 'n'. */
 extern struct list_elem *
 list_nth_from_back(struct list *, size_t n);
 
@@ -102,6 +130,12 @@ list_next(struct list_elem *);
 
 extern struct list_elem *
 list_prev(struct list_elem *);
+
+extern struct list_elem *
+list_find(struct list *, list_pred cond);
+
+extern struct list_elem *
+list_find_ex(struct list *, list_pred_ex cond, void *arg);
 
 /* ---------- slicing ---------- */
 
@@ -186,5 +220,9 @@ list_sort(struct list *, int (*cmp)(void *left, void *right), int desc);
 void
 list_sort_ex(struct list *, int (*cmp)(void *left, void *right, void *external_arg),
 		void *external_arg);
+
+/* A shallow copy. */
+struct list *
+list_copy(struct list *);
 
 #endif /* LIST_H */
