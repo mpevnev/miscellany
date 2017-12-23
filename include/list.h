@@ -152,6 +152,7 @@ lslice_create(struct list *, int cover_all);
 extern int 
 lslice_init(struct lslice *, struct list *, int cover_all);
 
+/* May return NULL on an OOM condition. */
 extern struct lslice *
 lslice_copy(struct lslice *);
 
@@ -161,11 +162,15 @@ lslice_init_from(struct lslice *init, struct lslice *from);
 extern void
 lslice_destroy(struct lslice *);
 
+/* Note that this function doesn't detect whether or not the beginning of a 
+ * slice is beyond its end. */
 extern struct list_elem *
-lslice_first(struct lslice *);
+lslice_start(struct lslice *);
 
+/* Note that this function doesn't detect whether or not the beginning of a 
+ * slice is beyond its end. */
 extern struct list_elem *
-lslice_last(struct lslice *);
+lslice_end(struct lslice *);
 
 extern int
 lslice_empty(struct lslice *);
