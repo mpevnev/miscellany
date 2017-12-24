@@ -5,7 +5,7 @@ LDFLAGS=-shared
 
 NAME=libmiscellany.so
 BUILDDIR=build
-TARGETS=btree.o
+TARGETS=btree.o list.o
 
 .PHONY: clean
 
