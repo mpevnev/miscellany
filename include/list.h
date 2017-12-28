@@ -72,9 +72,10 @@ list_append(struct list *to, struct list *append);
 
 /* Append a list destructively. The resulting list will reuse elements of the
  * 'append' argument, avoiding copying it.
+ * Optionally free the appended list.
  */
 extern void
-list_append_d(struct list *to, struct list *append);
+list_append_d(struct list *to, struct list *append, int do_free);
 
 /* Prepend a list to another list, creating a copy of the list to be prepended. */
 extern int
@@ -82,9 +83,20 @@ list_prepend(struct list *to, struct list *prepend);
 
 /* Prepend a list destructively. The resulting list will reuse elements of the
  * 'prepend' argument, avoiding copying it.
+ * Optionally free the prepended list.
  */
 extern void
-list_prepend_d(struct list *to, struct list *prepend);
+list_prepend_d(struct list *to, struct list *prepend, int do_free);
+
+/* Take an element from 'from' and prepend it to 'into'. No memory allocations
+ * or deallocations are performed. */
+extern void
+list_extract(struct list *into, struct list *from, struct list_elem *which_elem);
+
+/* Take an element from 'from' and append it to 'into'. No memory allocations
+ * or deallocations are performed. */
+extern void
+list_extract_back(struct list *to, struct list *from, struct list_elem *which_elem);
 
 /* ---------- removal ---------- */
 
@@ -110,6 +122,9 @@ list_first(struct list *);
 
 extern struct list_elem *
 list_last(struct list *);
+
+extern size_t
+list_length(struct list *);
 
 extern int
 list_empty(struct list *);
@@ -180,8 +195,7 @@ lslice_empty(struct lslice *);
 extern struct list *
 lslice_to_list(struct lslice *);
 
-/* Extract a slice from its list, destructively (which means that the slice
- * becomes invalid for most operations save traversing).
+/* Extract a slice from its list, destructively.
  * Return NULL on an OOM condition. */
 extern struct list *
 lslice_extract(struct lslice *);
@@ -232,17 +246,21 @@ lslice_shift_while_ex(struct lslice *, enum lslice_dir end, enum lslice_dir dir,
 /* If 'desc' is false, sort the list in ascending order, otherwise sort it in
  * descending order.
  * 'cmp' should return a negative value if 'left < right', 0 if they are equal,
- * and a positive value if 'left > right'. */
+ * and a positive value if 'left > right'. 
+ * Return a new sorted list, or NULL on an OOM condition. */
 struct list *
 list_sort(struct list *, int (*cmp)(void *left, void *right), int desc);
 
 /* Same, but 'cmp' takes an extra argument. */
 struct list *
 list_sort_ex(struct list *, int (*cmp)(void *left, void *right, void *external_arg),
-		void *external_arg);
+		int desc, void *external_arg);
 
 /* A shallow copy. */
 struct list *
 list_copy(struct list *);
+
+void **
+list_to_array(struct list *, size_t *size);
 
 #endif /* LIST_H */

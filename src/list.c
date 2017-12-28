@@ -4,6 +4,19 @@
 
 #include "list.h"
 
+/* ---------- helper functions declarations ---------- */
+
+static void 
+destroy_nested(void *list);
+
+static struct list *
+list_merge(struct list *group_a, struct list *group_b, 
+		int (*cmp)(void *left, void *right), int desc);
+
+static struct list *
+list_merge_ex(struct list *group_a, struct list *group_b,
+		int (*cmp)(void *left, void *right, void *arg), int desc, void *arg);
+
 /* ---------- creation ---------- */
 
 struct list *
@@ -133,12 +146,12 @@ list_append(struct list *to, struct list *append)
 	struct list *copy = list_copy(append);
 	if (copy == NULL) return 0;
 
-	list_append_d(to, copy);
+	list_append_d(to, copy, 1);
 	return 1;
 }
 
 void
-list_append_d(struct list *to, struct list *append)
+list_append_d(struct list *to, struct list *append, int do_free)
 {
 	if (to->first == NULL) {
 		to->first = append->first;
@@ -148,7 +161,8 @@ list_append_d(struct list *to, struct list *append)
 		append->first->prev = to->last;
 		to->last = append->last;
 	}
-	free(append);
+	append->first = append->last = NULL;
+	if (do_free) free(append);
 }
 
 int
@@ -157,12 +171,12 @@ list_prepend(struct list *to, struct list *prepend)
 	struct list *copy = list_copy(prepend);
 	if (copy == NULL) return 0;
 
-	list_prepend_d(to, copy);
+	list_prepend_d(to, copy, 1);
 	return 1;
 }
 
 void
-list_prepend_d(struct list *to, struct list *prepend)
+list_prepend_d(struct list *to, struct list *prepend, int do_free)
 {
 	if (to->first == NULL) {
 		to->first = prepend->first;
@@ -172,7 +186,60 @@ list_prepend_d(struct list *to, struct list *prepend)
 		prepend->last->next = to->first;
 		to->first = prepend->first;
 	}
-	free(prepend);
+	prepend->first = prepend->last = NULL;
+	if (do_free) free(prepend);
+}
+
+void
+list_extract(struct list *into, struct list *from, struct list_elem *elem)
+{
+	struct list_elem *prev = elem->prev;
+	struct list_elem *next = elem->next;
+	if (elem == from->first)
+		from->first = next;
+	if (elem == from->last)
+		from->last = prev;
+	if (prev != NULL) 
+		prev->next = next;
+	if (next != NULL)
+		next->prev = prev;
+
+	struct list_elem *into_head = into->first;
+	if (into_head == NULL) {
+		into->first = into->last = elem;
+		elem->next = elem->prev = NULL;
+	} else {
+		into->first = elem;
+		elem->next = into_head;
+		elem->prev = NULL;
+		into_head->prev = elem;
+	}
+}
+
+void
+list_extract_back(struct list *into, struct list *from, struct list_elem *elem)
+{
+	struct list_elem *prev = elem->prev;
+	struct list_elem *next = elem->next;
+	if (elem == from->first)
+		from->first = next;
+	if (elem == from->last)
+		from->last = prev;
+	if (prev != NULL) 
+		prev->next = next;
+	if (next != NULL)
+		next->prev = prev;
+
+	struct list_elem *into_tail = into->last;
+	if (into_tail == NULL) {
+		into->first = into->last = elem;
+		elem->next = elem->prev = NULL;
+	} else {
+		into->last = elem;
+		elem->prev = into_tail;
+		elem->next = NULL;
+		into_tail->next = elem;
+	}
 }
 
 /* ---------- popping ---------- */
@@ -257,6 +324,18 @@ struct list_elem *
 list_last(struct list *list)
 {
 	return list->last;
+}
+
+size_t
+list_length(struct list *list)
+{
+	struct list_elem *cur = list->first;
+	size_t res = 0;
+	while (cur != NULL) {
+		res++;
+		cur = cur->next;
+	}
+	return res;
 }
 
 int
@@ -594,10 +673,180 @@ lslice_shift_while_ex(struct lslice *slice, enum lslice_dir which_end, enum lsli
 
 /* ---------- other ---------- */
 
+#define SORT_BODY(list, cmp, desc, group_a, group_b, merge) \
+{ \
+	struct list *res = NULL; \
+	struct list *groups = NULL; \
+	struct list *next_groups = NULL; \
+ \
+	groups = list_create(); \
+	if (groups == NULL) goto fail; \
+ \
+	/* Split the original list into lists of length 1 and put them in 'groups'. */ \
+	struct list_elem *cur = list->first; \
+	while (cur != NULL) { \
+		struct list *new_list = list_create(); \
+		if (new_list == NULL) goto fail; \
+		if (!list_push(new_list, cur->data)) goto fail; \
+		if (!list_push_back(groups, new_list)) goto fail; \
+		cur = cur->next; \
+	} \
+ \
+	size_t group_size = 1; \
+	size_t len = list_length(list); \
+	while (group_size < len) { \
+		/* Merge adjacent groups and prepare a new layer from the \
+		 * merged groups. */ \
+		next_groups = list_create(); \
+		if (next_groups == NULL) goto fail; \
+		struct list_elem *first = groups->first; \
+		struct list_elem *second = first->next; \
+		while (first != NULL && second != NULL) { \
+			struct list *group_a = first->data; \
+			struct list *group_b = second->data; \
+			struct list *new_group = merge; \
+			if (new_group == NULL) goto fail; \
+			if (!list_push_back(next_groups, new_group)) { \
+				list_destroy(new_group); \
+				goto fail; \
+			} \
+			first = second->next; \
+			second = first == NULL ? NULL : first->next; \
+		} \
+		/* If the number of groups is not even, 'first' will contain \
+		 * the trailing group. */ \
+		if (first != NULL) { \
+			struct list *extract = list_create(); \
+			if (extract == NULL) goto fail; \
+			list_append_d(extract, first->data, 0); \
+			if (!list_push_back(next_groups, extract)) { \
+				list_destroy(extract); \
+				goto fail; \
+			} \
+		} \
+		list_destroy_ex(groups, &destroy_nested); \
+		groups = next_groups; \
+		next_groups = NULL; \
+		group_size <<= 1; \
+	} /* while group_size < len */ \
+ \
+	/* Now 'groups' contains a single sorted list, which is what we want. */ \
+	res = list_pop(groups); \
+	list_destroy(groups); \
+	return res; \
+ \
+	/* This goto greatly simplifies failure and clean-up code. */ \
+fail: \
+	if (res != NULL)  \
+		list_destroy(list); \
+	if (groups != NULL)  \
+		list_destroy_ex(groups, &destroy_nested); \
+	if (next_groups != NULL) \
+		list_destroy_ex(groups, &destroy_nested); \
+	return NULL; \
+} \
+
 struct list *
 list_sort(struct list *list, int (*cmp)(void *left, void *right), int desc)
 {
-	return NULL;
+	SORT_BODY(list, cmp, desc, group_a, group_b,  
+			list_merge(group_a, group_b, cmp, desc));
+}
+
+struct list *
+list_sort_ex(struct list *list, int (*cmp)(void *left, void *right, void *arg),
+		int desc, void *arg)
+{
+	SORT_BODY(list, cmp, desc, group_a, group_b,
+			list_merge_ex(group_a, group_b, cmp, desc, arg));
+}
+
+struct list *
+list_copy(struct list *list)
+{
+	struct list *res = list_create();
+	if (res == NULL) return NULL;
+
+	struct list_elem *cur = list->first;
+	while (cur != NULL) {
+		if (!list_push_back(res, cur->data)) {
+			list_destroy(res);
+			return NULL;
+		}
+		cur = cur->next;
+	}
+	return res;
+}
+
+void **
+list_to_array(struct list *list, size_t *size)
+{
+	size_t len = list_length(list);
+	void **res = malloc(len * sizeof(void *));
+	if (res == NULL) return NULL;
+	if (size != NULL) *size = len;
+
+	struct list_elem *cur = list->first;
+	void **pos = res;
+	while (cur != NULL) {
+		*pos = cur->data;
+		cur = cur->next;
+		pos++;
+	}
+
+	return res;
 }
 
 /* ---------- helper things ---------- */
+
+/* A helper function for sorting algorithm. */
+static void
+destroy_nested(void *list)
+{
+	list_destroy(list);
+}
+
+#define MERGE_BODY(group_a, group_b, cmp, desc, cur_a, cur_b, cmp_line) \
+{ \
+	struct list *res = list_create(); \
+	if (res == NULL) return NULL; \
+ \
+	struct list_elem *cur_a = group_a->first; \
+	struct list_elem *cur_b = group_b->first; \
+	while (cur_a != NULL && cur_b != NULL) { \
+		int cmp_res = cmp_line; \
+		struct list_elem *next_a = cur_a->next; \
+		struct list_elem *next_b = cur_b->next; \
+		/* Figure out which data to take. */ \
+		if (desc && cmp_res < 0 || !desc && cmp_res > 0) { \
+			list_extract_back(res, group_b, cur_b); \
+			cur_b = next_b; \
+		} else { \
+			list_extract_back(res, group_a, cur_a); \
+			cur_a = next_a; \
+		} \
+	} \
+	if (cur_a != NULL) list_append_d(res, group_a, 0); \
+	if (cur_b != NULL) list_append_d(res, group_b, 0); \
+	return res; \
+} \
+
+/* A helper function for sorting algorithm to merge two lists. 
+ * Both groups will be exausted after the function is done.
+ * Return NULL on an OOM condition. */
+static struct list *
+list_merge(struct list *group_a, struct list *group_b,
+		int (*cmp)(void *left, void *right), int desc)
+{
+	MERGE_BODY(group_a, group_b, cmp, desc, cur_a, cur_b, 
+			cmp(cur_a->data, cur_b->data));
+}
+
+/* Same, but the comparison function takes an extra argument. */
+static struct list *
+list_merge_ex(struct list *group_a, struct list *group_b,
+		int (*cmp)(void *left, void *right, void *arg), int desc, void *arg)
+{
+	MERGE_BODY(group_a, group_b, cmp, desc, cur_a, cur_b,
+			cmp(cur_a->data, cur_b->data, arg));
+}
