@@ -82,6 +82,31 @@ START_TEST(test_sorting_3)
 }
 END_TEST;
 
+START_TEST(test_sorting_4)
+{
+	struct list *list = list_create();
+	ck_assert_msg(list != NULL, "Failed to create a list");
+
+	size_t size = 6;
+	int to_be_sorted[] = {1, 9, 8, 7, 6, 5};
+	int expected[] = {9, 8, 7, 6, 5, 1};
+
+	for (size_t i = 0; i < size; i++) {
+		list_push_back(list, to_be_sorted + i);
+	}
+
+	struct list *sorted = list_sort(list, &cmp_ints, 1);  
+	void **sorted_array = list_to_array(sorted, NULL);
+
+	ck_assert_msg(cmp_int_array(size, expected, sorted_array) == 0, 
+			"Sorting returned unexpected result");
+
+	free(sorted_array);
+	list_destroy(list);
+	list_destroy(sorted);
+}
+END_TEST;
+
 Suite *
 list_suite(void)
 {
@@ -92,6 +117,7 @@ list_suite(void)
 	tcase_add_test(core_tests, test_sorting_1);
 	tcase_add_test(core_tests, test_sorting_2);
 	tcase_add_test(core_tests, test_sorting_3);
+	tcase_add_test(core_tests, test_sorting_4);
 
 	suite_add_tcase(res, core_tests);
 
