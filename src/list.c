@@ -4,18 +4,30 @@
 
 #include "list.h"
 
-/* ---------- helper functions declarations ---------- */
+/* ---------- helper functions declarations and some helper macros ---------- */
 
 static void 
 destroy_nested(void *list);
 
+static int
+sort_step(struct list **groups, int (*cmp)(void *, void *), int desc);
+
+static int
+sort_step_ex(struct list **groups, int (*cmp)(void *, void *, void *), int desc, void *arg);
+
 static struct list *
-list_merge(struct list *group_a, struct list *group_b, 
+merge(struct list *group_a, struct list *group_b, 
 		int (*cmp)(void *left, void *right), int desc);
 
 static struct list *
-list_merge_ex(struct list *group_a, struct list *group_b,
+merge_ex(struct list *group_a, struct list *group_b,
 		int (*cmp)(void *left, void *right, void *arg), int desc, void *arg);
+
+static struct list *
+split_into_groups(struct list *list);
+
+static int
+append_trailing(struct list *next_groups, struct list_elem *trailing_group);
 
 /* ---------- creation ---------- */
 
@@ -673,92 +685,51 @@ lslice_shift_while_ex(struct lslice *slice, enum lslice_dir which_end, enum lsli
 
 /* ---------- other ---------- */
 
-#define SORT_BODY(list, cmp, desc, group_a, group_b, merge) \
-{ \
-	struct list *res = NULL; \
-	struct list *groups = NULL; \
-	struct list *next_groups = NULL; \
- \
-	groups = list_create(); \
-	if (groups == NULL) goto fail; \
- \
-	/* Split the original list into lists of length 1 and put them in 'groups'. */ \
-	struct list_elem *cur = list->first; \
-	while (cur != NULL) { \
-		struct list *new_list = list_create(); \
-		if (new_list == NULL) goto fail; \
-		if (!list_push(new_list, cur->data)) goto fail; \
-		if (!list_push_back(groups, new_list)) goto fail; \
-		cur = cur->next; \
-	} \
- \
-	size_t group_size = 1; \
-	size_t len = list_length(list); \
-	while (group_size < len) { \
-		/* Merge adjacent groups and prepare a new layer from the \
-		 * merged groups. */ \
-		next_groups = list_create(); \
-		if (next_groups == NULL) goto fail; \
-		struct list_elem *first = groups->first; \
-		struct list_elem *second = first->next; \
-		while (first != NULL && second != NULL) { \
-			struct list *group_a = first->data; \
-			struct list *group_b = second->data; \
-			struct list *new_group = merge; \
-			if (new_group == NULL) goto fail; \
-			if (!list_push_back(next_groups, new_group)) { \
-				list_destroy(new_group); \
-				goto fail; \
-			} \
-			first = second->next; \
-			second = first == NULL ? NULL : first->next; \
-		} \
-		/* If the number of groups is not even, 'first' will contain \
-		 * the trailing group. */ \
-		if (first != NULL) { \
-			struct list *extract = list_create(); \
-			if (extract == NULL) goto fail; \
-			list_append_d(extract, first->data, 0); \
-			if (!list_push_back(next_groups, extract)) { \
-				list_destroy(extract); \
-				goto fail; \
-			} \
-		} \
-		list_destroy_ex(groups, &destroy_nested); \
-		groups = next_groups; \
-		next_groups = NULL; \
-		group_size <<= 1; \
-	} /* while group_size < len */ \
- \
-	/* Now 'groups' contains a single sorted list, which is what we want. */ \
-	res = list_pop(groups); \
-	list_destroy(groups); \
-	return res; \
- \
-	/* This goto greatly simplifies failure and clean-up code. */ \
-fail: \
-	if (res != NULL)  \
-		list_destroy(list); \
-	if (groups != NULL)  \
-		list_destroy_ex(groups, &destroy_nested); \
-	if (next_groups != NULL) \
-		list_destroy_ex(groups, &destroy_nested); \
-	return NULL; \
-} \
-
 struct list *
 list_sort(struct list *list, int (*cmp)(void *left, void *right), int desc)
 {
-	SORT_BODY(list, cmp, desc, group_a, group_b,  
-			list_merge(group_a, group_b, cmp, desc));
+	struct list *groups = split_into_groups(list);
+	if (groups == NULL) return NULL;
+
+	size_t len = list_length(list);
+	size_t group_size = 1;
+	if (len == 0) return groups;
+	while (group_size < len) {
+		if (!sort_step(&groups, cmp, desc)) {
+			list_destroy_ex(groups, &destroy_nested);
+			return NULL;
+		}
+		group_size <<= 1;
+	}
+
+	/* After the loop is done, 'groups' will contain a single sorted list. */
+	struct list *res = list_pop(groups);
+	list_destroy(groups);
+	return res;
 }
 
 struct list *
 list_sort_ex(struct list *list, int (*cmp)(void *left, void *right, void *arg),
 		int desc, void *arg)
 {
-	SORT_BODY(list, cmp, desc, group_a, group_b,
-			list_merge_ex(group_a, group_b, cmp, desc, arg));
+	struct list *groups = split_into_groups(list);
+	if (groups == NULL) return NULL;
+
+	size_t len = list_length(list);
+	size_t group_size = 1;
+	if (len == 0) return groups;
+	while (group_size < len) {
+		if (!sort_step_ex(&groups, cmp, desc, arg)) {
+			list_destroy_ex(groups, &destroy_nested);
+			return NULL;
+		}
+		group_size <<= 1;
+	}
+
+	/* After the loop is done, 'groups' will contain a single sorted list. */
+	struct list *res = list_pop(groups);
+	list_destroy(groups);
+	return res;
 }
 
 struct list *
@@ -835,7 +806,7 @@ destroy_nested(void *list)
  * Both groups will be exausted after the function is done.
  * Return NULL on an OOM condition. */
 static struct list *
-list_merge(struct list *group_a, struct list *group_b,
+merge(struct list *group_a, struct list *group_b,
 		int (*cmp)(void *left, void *right), int desc)
 {
 	MERGE_BODY(group_a, group_b, cmp, desc, cur_a, cur_b, 
@@ -844,9 +815,108 @@ list_merge(struct list *group_a, struct list *group_b,
 
 /* Same, but the comparison function takes an extra argument. */
 static struct list *
-list_merge_ex(struct list *group_a, struct list *group_b,
+merge_ex(struct list *group_a, struct list *group_b,
 		int (*cmp)(void *left, void *right, void *arg), int desc, void *arg)
 {
 	MERGE_BODY(group_a, group_b, cmp, desc, cur_a, cur_b,
 			cmp(cur_a->data, cur_b->data, arg));
+}
+
+static struct list *
+split_into_groups(struct list *list)
+{
+	struct list *groups = list_create();
+	if (groups == NULL) return NULL;
+
+	struct list_elem *cur = list->first;
+	while (cur != NULL) {
+		struct list *new_list = list_create();
+		if (new_list == NULL) {
+			list_destroy_ex(groups, &destroy_nested);
+			return NULL;
+		}
+		if (!list_push(new_list, cur->data)) {
+			list_destroy_ex(groups, &destroy_nested);
+			list_destroy(new_list);
+			return NULL;
+		}
+		if (!list_push_back(groups, new_list)) {
+			list_destroy_ex(groups, &destroy_nested);
+			list_destroy(new_list);
+			return NULL;
+		}
+		cur = cur->next;
+	}
+	return groups;
+}
+
+static int
+append_trailing(struct list *next_groups, struct list_elem *trailing_group)
+{
+	struct list *extract = list_create();
+	if (extract == NULL) return 0;
+	list_append_d(extract, trailing_group->data, 0);
+	if (!list_push_back(next_groups, extract)) {
+		list_destroy(extract);
+		return 0;
+	}
+	return 1;
+}
+
+static int
+sort_step(struct list **groups, int (*cmp)(void *, void *), int desc)
+{
+	struct list *new_groups = list_create();
+	if (new_groups == NULL) return 0;
+
+	struct list_elem *first = (*groups)->first;
+	struct list_elem *second = first->next;
+	while (first != NULL && second != NULL) {
+		struct list *merged = merge(first->data, second->data, cmp, desc);
+		if (merged == NULL) {
+			list_destroy_ex(new_groups, &destroy_nested);
+			return 0;
+		}
+		if (!list_push_back(new_groups, merged)) {
+			list_destroy(merged);
+			list_destroy_ex(new_groups, &destroy_nested);
+			return 0;
+		}
+		first = second->next;
+		second = first == NULL ? NULL : first->next;
+	}
+	if (first != NULL)
+		append_trailing(new_groups, first);
+	list_destroy_ex(*groups, &destroy_nested);
+	*groups = new_groups;
+	return 1;
+}
+
+static int
+sort_step_ex(struct list **groups, int (*cmp)(void *, void *, void *), int desc, void *arg)
+{
+	struct list *new_groups = list_create();
+	if (new_groups == NULL) return 0;
+
+	struct list_elem *first = (*groups)->first;
+	struct list_elem *second = first->next;
+	while (first != NULL && second != NULL) {
+		struct list *merged = merge(first->data, second->data, cmp, desc, arg);
+		if (merged == NULL) {
+			list_destroy_ex(new_groups, &destroy_nested);
+			return 0;
+		}
+		if (!list_push_back(new_groups, merged)) {
+			list_destroy(merged);
+			list_destroy_ex(new_groups, &destroy_nested);
+			return 0;
+		}
+		first = second->next;
+		second = first == NULL ? NULL : first->next;
+	}
+	if (first != NULL)
+		append_trailing(new_groups, first);
+	list_destroy_ex(*groups, &destroy_nested);
+	*groups = new_groups;
+	return 1;
 }
