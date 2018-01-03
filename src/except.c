@@ -2,6 +2,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "except.h"
 #include "list.h"
@@ -33,7 +34,7 @@ exc_init(void)
 	exc_unc_handler = &default_exception_handler;
 	exc_exception = NULL;
 
-	exc_oom_exception = exc_create(0, 0, NULL, NULL);
+	exc_oom_exception = exc_create(0, EXC_OOM, NULL, NULL);
 	if (exc_oom_exception == NULL)
 		return 0;
 
@@ -82,7 +83,10 @@ exc_throw(struct except *exc)
 		exit(EXIT_FAILURE);
 	} else {
 		jmp_buf *try_point = list_pop(exc_try_points);
-		longjmp(*try_point, 1);
+		jmp_buf copy;
+	        memcpy(&copy, try_point, sizeof(jmp_buf));
+		free(try_point);
+		longjmp(copy, 1);
 	}
 }
 
@@ -104,6 +108,12 @@ exc_rethrow(struct except *exc, void *new_data, void (*new_cleaner)(void *))
 	exc_throw(exc);
 }
 
+void *
+exc_data(struct except *exc)
+{
+	return exc->data;
+}
+
 void
 exc_destroy(struct except *exc)
 {
@@ -120,7 +130,7 @@ exc_destroy_v(void *exc)
 	exc_destroy(exc);
 }
 
-void
+_Noreturn void
 default_exception_handler(struct except *exc)
 {
 	fprintf(stderr, "Uncaught exception %d:%d\n", exc->namespace, exc->type);
