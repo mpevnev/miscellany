@@ -4,10 +4,13 @@ CFLAGS=-Iinclude -Wall -fPIC -ggdb
 LDFLAGS=-shared
 
 NAME=libmiscellany.so
-BUILDDIR=build
-TARGETS=btree.o list.o except.o
+MODULES=btree list except
+TARGETS=$(addsuffix .o, $(MODULES))
+HEADERS=$(addsuffix .h, $(MODULES))
 
-.PHONY: clean
+BUILDDIR=build
+
+.PHONY: clean install
 
 $(NAME): $(TARGETS)
 	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
@@ -20,6 +23,11 @@ $(BUILDDIR):
 clean: 
 	rm $(BUILDDIR)/*
 	rm $(NAME)
+
+install: $(NAME)
+	install -Dm755 $(NAME) $(prefix)/lib/$(NAME)
+	install -d $(prefix)/include/misc
+	install -Dm644 $(addprefix include/, $(HEADERS)) $(prefix)/include/misc
 
 $(addprefix $(BUILDDIR)/, $(TARGETS)): $(BUILDDIR)/%.o : src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
