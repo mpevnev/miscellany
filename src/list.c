@@ -901,7 +901,7 @@ sort_step_ex(struct list **groups, int (*cmp)(void *, void *, void *), int desc,
 	struct list_elem *first = (*groups)->first;
 	struct list_elem *second = first->next;
 	while (first != NULL && second != NULL) {
-		struct list *merged = merge(first->data, second->data, cmp, desc, arg);
+		struct list *merged = merge_ex(first->data, second->data, cmp, desc, arg);
 		if (merged == NULL) {
 			list_destroy_ex(new_groups, &destroy_nested);
 			return 0;
