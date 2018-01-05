@@ -422,6 +422,29 @@ list_find_ex(struct list *list, list_pred_ex cond, void *arg)
 	return NULL;
 }
 
+struct list_elem *
+list_find_eq(struct list *list, void *data, int (*eq)(void *, void *))
+{
+	struct list_elem *cur = list->first;
+	while (cur != NULL) {
+		if (eq(cur->data, data)) return cur;
+		cur = cur->next;
+	}
+	return NULL;
+}
+
+struct list_elem *
+list_find_eq_ex(struct list *list, void *data, 
+		int (*eq)(void *data1, void *data2, void *arg), void *arg)
+{
+	struct list_elem *cur = list->first;
+	while (cur != NULL) {
+		if (eq(cur->data, data, arg)) return cur;
+		cur = cur->next;
+	}
+	return NULL;
+}
+
 /* ---------- slicing ---------- */
 
 struct lslice *

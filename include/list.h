@@ -154,6 +154,14 @@ list_find(struct list *, list_pred cond);
 extern struct list_elem *
 list_find_ex(struct list *, list_pred_ex cond, void *arg);
 
+/* Find the first element that compares equal to a given data. */
+extern struct list_elem *
+list_find_eq(struct list *, void *data, int (*eq)(void *, void *));
+
+extern struct list_elem *
+list_find_eq_ex(struct list *, void *data, 
+		int (*eq)(void *data1, void *data2, void *arg), void *arg);
+
 /* ---------- slicing ---------- */
 
 /* If 'cover_all' is true, the resulting slice will contain all of the list,
