@@ -148,6 +148,12 @@ arr_ix(struct array *array, size_t index)
 
 /* ---------- manipulation ---------- */
 
+void
+arr_set(struct array *array, size_t index, void *data)
+{
+	memcpy(array->data + index * array->stride, data, array->stride);
+}
+
 int
 arr_append(struct array *array, void *data)
 {

@@ -97,6 +97,9 @@ arr_ix(struct array *, size_t index);
 
 /* ---------- manipulation ---------- */
 
+extern void
+arr_set(struct array *, size_t index, void *data);
+
 /* All of these return 1 on success and 0 on failure. 
  * If used on a view, data will be copied and the view will become an 
  * independent array. */
