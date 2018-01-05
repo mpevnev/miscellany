@@ -19,11 +19,11 @@ arr_create(size_t capacity, size_t stride)
 }
 
 struct array *
-arr_from_data(size_t size, size_t stride, void *data, int copy_data)
+arr_from_data(size_t size, size_t stride, void *data)
 {
 	struct array *res = malloc(sizeof(struct array));
 	if (res == NULL) return NULL;
-	if (!arr_init_from_data(res, size, stride, data, copy_data)) {
+	if (!arr_init_from_data(res, size, stride, data)) {
 		free(res);
 		return NULL;
 	}
@@ -33,7 +33,7 @@ arr_from_data(size_t size, size_t stride, void *data, int copy_data)
 struct array *
 arr_from_array(struct array *array)
 {
-	return arr_from_data(array->size, array->stride, array->data, 1);
+	return arr_from_data(array->size, array->stride, array->data);
 }
 
 int
@@ -52,18 +52,13 @@ arr_init(struct array *array, size_t capacity, size_t stride)
 }
 
 int
-arr_init_from_data(struct array *array, size_t size, size_t stride, void *data,
-		int copy_data)
+arr_init_from_data(struct array *array, size_t size, size_t stride, void *data)
 {
-	if (copy_data) {
-		void *copy = malloc(sizeof(size * stride));
-		if (size != 0 && copy == NULL)
-			return 0;
-		memcpy(copy, data, size * stride);
-		array->data = copy;
-	} else {
-		array->data = data;
-	}
+	void *copy = malloc(sizeof(size * stride));
+	if (size != 0 && copy == NULL)
+		return 0;
+	memcpy(copy, data, size * stride);
+	array->data = copy;
 	array->size = array->capacity = size;
 	array->stride = stride;
 	array->is_view = 0;
@@ -73,7 +68,7 @@ arr_init_from_data(struct array *array, size_t size, size_t stride, void *data,
 int
 arr_init_from_array(struct array *init, struct array *from)
 {
-	return arr_init_from_data(init, from->size, from->stride, from->data, 1);
+	return arr_init_from_data(init, from->size, from->stride, from->data);
 }
 
 /* ---------- destruction and finalization ---------- */
@@ -215,6 +210,7 @@ arr_preallocate(struct array *array, size_t new_capacity)
 	void *new_data = realloc(array->data, new_capacity * array->stride);
 	if (new_data == NULL) return 0;
 	array->capacity = new_capacity;
+	array->data = new_data;
 	return 1;
 }
 
@@ -225,6 +221,7 @@ arr_shrink_to_fit(struct array *array)
 	void *new_data = realloc(array->data, array->size * array->stride);
 	if (new_data == NULL) return 0;
 	array->capacity = array->size;
+	array->data = new_data;
 	return 1;
 }
 

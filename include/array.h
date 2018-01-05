@@ -5,12 +5,7 @@
  *
  * Provides dynamically growable (and shrinkable) arrays.
  *
- * Note that if you try to append an array or an element of a different size
- * to another array, it may sort of work, but you will have absolutely no way
- * of indexing such a construct (without major black magic). Please don't do
- * this, it'll just corrupt your normal data.
- *
- * */
+ */
 
 struct array
 {
@@ -34,10 +29,10 @@ extern struct array *
 arr_create(size_t capacity, size_t stride);
 
 /* Construct an array from a given data block.
- * If 'copy_data' is true, make a copy of 'data' instead of reusing it. 
+ * Data will be copied.
  * Return NULL on an OOM condition. */
 extern struct array *
-arr_from_data(size_t size, size_t stride, void *data, int copy_data);
+arr_from_data(size_t size, size_t stride, void *data);
 
 /* This will copy the data, so the resulting array is wholly independent from
  * the source array. 
@@ -51,8 +46,7 @@ extern int
 arr_init(struct array *array, size_t capacity, size_t stride);
 
 extern int
-arr_init_from_data(struct array *array, size_t size, size_t stride, void *data,
-		int copy_data);
+arr_init_from_data(struct array *array, size_t size, size_t stride, void *data);
 
 extern int
 arr_init_from_array(struct array *init, struct array *from);
@@ -91,18 +85,22 @@ arr_capacity(struct array *);
 extern size_t 
 arr_stride(struct array *);
 
-/* Index into the array. */
+/* Index into an array. */
 extern void *
 arr_ix(struct array *, size_t index);
 
 /* ---------- manipulation ---------- */
 
+/* Note that this uses buffer pointed to by 'data', not the pointer itself. */
 extern void
 arr_set(struct array *, size_t index, void *data);
 
 /* All of these return 1 on success and 0 on failure. 
  * If used on a view, data will be copied and the view will become an 
  * independent array. */
+
+/* Note that both append and prepend work on data pointed to by the 'data', not
+ * with the data pointer itself. */
 
 extern int
 arr_append(struct array *, void *data);
@@ -118,8 +116,9 @@ arr_prepend_a(struct array *prepend_to, struct array *prepend);
 
 /* Note that preallocating and shrinking arrays invalidates views based on them. */
 
-/* Preallocate some space for array elements. Do nothing if the requested 
- * capacity is less that the size of the array. */
+/* Preallocate some space for array elements. 
+ * Do nothing and return true if the requested capacity is less that the size
+ * of the array. */
 extern int
 arr_preallocate(struct array *, size_t new_capacity);
 
