@@ -4,7 +4,7 @@ CFLAGS=-Iinclude -Wall -fPIC -ggdb
 LDFLAGS=-shared
 
 NAME=libmiscellany.so
-MODULES=btree list except
+MODULES=btree list except array
 TARGETS=$(addsuffix .o, $(MODULES))
 HEADERS=$(addsuffix .h, $(MODULES))
 
