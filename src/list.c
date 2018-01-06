@@ -805,7 +805,7 @@ destroy_nested(void *list)
 		struct list_elem *next_a = cur_a->next; \
 		struct list_elem *next_b = cur_b->next; \
 		/* Figure out which data to take. */ \
-		if (desc && cmp_res < 0 || !desc && cmp_res > 0) { \
+		if ((desc && cmp_res < 0) || (!desc && cmp_res > 0)) { \
 			list_extract_back(res, group_b, cur_b); \
 			cur_b = next_b; \
 		} else { \

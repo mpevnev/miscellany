@@ -142,6 +142,7 @@ btt_next_node(struct btt *btt)
 		case BTT_INORDER: return btt_next_inorder(btt);
 		case BTT_INORDER_REV: return btt_next_inorder_rev(btt);
 	}
+	return NULL; /* Just to silence a gcc warning. */
 }
 
 void
