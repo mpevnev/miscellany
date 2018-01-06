@@ -6,6 +6,8 @@ implememted this a million times' variety - lists, growable arrays and such.
 Most modules provide containers of some description, but some do not. 
 Link it with `-lmiscellany` and include the headers with `<misc/MODULE.h>`
 
+Note that the library provides no `typedef`s to its struct. 
+
 # Modules
 
 In the `docs` directory there are markdown files with detailed descriptions of
