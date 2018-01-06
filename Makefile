@@ -1,7 +1,8 @@
 
 VPATH=src:include:build
 CFLAGS=-Iinclude -Wall -fPIC -ggdb
-LDFLAGS=-shared
+LDFLAGS=-shared 
+LDLIBS=-lm
 
 NAME=libmiscellany.so
 MODULES=btree list except array map
