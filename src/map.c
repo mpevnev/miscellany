@@ -1,14 +1,21 @@
-
+#include <math.h>
 #include <stdlib.h>
 
 #include "array.h"
 #include "list.h"
 #include "map.h"
 
+#define CRIT_LOAD_FACTOR 0.7
+#define EXPAND_FACTOR 1.3
+#define EXPAND_MIN 10
+
 /* ---------- helper function declarations ---------- */
 
 static size_t 
 next_prime(size_t i);
+
+static int
+is_prime(size_t i);
 
 static void 
 destroy_list_from_array(void *ptr);
@@ -91,6 +98,23 @@ map_destroy_ex(struct map *map, void (*pair_destroyer)(void *pair))
 	free(map);
 }
 
+void
+map_destroy_exx(struct map *map, void (*pair_destroyer)(void *pair, void *arg), void *arg)
+{
+	size_t size = arr_size(map->buckets);
+	for (size_t i = 0; i < size; i++) {
+		struct list **chain = arr_ix(map->buckets, i);
+		struct list_elem *cur = list_first(*chain);
+		while (cur != NULL) {
+			pair_destroyer(list_data(cur), arg);
+			cur = cur->next;
+		}
+		list_destroy_ex(*chain, &free);
+	}
+	arr_destroy(map->buckets);
+	free(map);
+}
+
 /* ---------- manipulation ---------- */
 
 enum map_err
@@ -100,7 +124,7 @@ map_insert(struct map *map, void *key, void *value, key_eq_fn eq)
 	ix = ix % arr_size(map->buckets);
 
 	struct list **chain = arr_ix(map->buckets, ix);
-	if (can_find(*chain, key, eq)) 
+	if (eq != NULL && can_find(*chain, key, eq)) 
 		return MAPE_EXIST;
 
 	struct map_pair *pair = create_pair(key, value);
@@ -120,7 +144,7 @@ map_insert_ex(struct map *map, void *key, void *value, key_eq_ex_fn eq, void *ar
 	ix = ix % arr_size(map->buckets);
 
 	struct list **chain = arr_ix(map->buckets, ix);
-	if (can_find_ex(*chain, key, eq, arg)) 
+	if (eq != NULL && can_find_ex(*chain, key, eq, arg)) 
 		return MAPE_EXIST;
 
 	struct map_pair *pair = create_pair(key, value);
@@ -133,9 +157,36 @@ map_insert_ex(struct map *map, void *key, void *value, key_eq_ex_fn eq, void *ar
 	return MAPE_OK;
 }
 
-/* ---------- information retrieval ---------- */
+int
+map_expand(struct map *map, double factor, size_t min)
+{
+	size_t old_size = arr_size(map->buckets);
+	size_t new_size = old_size * factor;
+	if (new_size < old_size + min) new_size = old_size + min;
 
-#include <stdio.h>
+	struct array *old_buckets = map->buckets;
+	int ok = init_buckets(map, new_size);
+	if (!ok) return 0;
+
+	for (size_t i = 0; i < old_size; i++) {
+		struct list **chain = arr_ix(old_buckets, i);
+		struct list_elem *cur = (*chain)->first;
+		while (cur != NULL) {
+			struct map_pair *pair = list_data(cur);
+			if (map_insert(map, pair->key, pair->value, NULL) != MAPE_OK) {
+				arr_destroy_ex(map->buckets, &destroy_pair_list);
+				map->buckets = old_buckets;
+				return 0;
+			}
+			cur = list_next(cur);
+		} /* foreach pair in chain */
+	} /* foreach bucket */
+
+	arr_destroy_ex(old_buckets, &destroy_pair_list);
+	return 1;
+}
+
+/* ---------- information retrieval ---------- */
 
 int
 map_lookup(struct map *map, void *key, key_eq_fn eq, void **value)
@@ -173,13 +224,37 @@ map_lookup_ex(struct map *map, void *key, key_eq_ex_fn eq, void *eq_arg, void **
 	return 0;
 }
 
+double
+map_load_factor(struct map *map)
+{
+	size_t len = arr_size(map->buckets);
+	size_t num_used = 0;
+	for (size_t i = 0; i < len; i++) {
+		struct list **cur = arr_ix(map->buckets, i);
+		if (!list_empty(*cur)) num_used++;
+	}
+	return num_used * 1.0 / len;
+}
+
 /* ---------- helper functions ---------- */
+
+int
+is_prime(size_t i)
+{
+	size_t root = sqrt(i);
+	for (size_t k = 2; k <= root; k++)
+		if (i % k == 0) return 0;
+	return 1;
+}
 
 size_t
 next_prime(size_t i)
 {
-	/* TODO: actual prime computation. */
-	return i + 1;
+	if (i % 2 == 0) i++;
+	while (1) {
+		if (is_prime(i)) return i;
+		i += 2;
+	}
 }
 
 void
