@@ -44,7 +44,7 @@ create_pair(void *key, void *value);
 /* ---------- creation ---------- */
 
 struct map *
-map_create(size_t num_buckets, key_size_fn key_size)
+map_create(size_t num_buckets, key_size_fn key_size, int allow_autoexpand)
 {
 	struct map *res = malloc(sizeof(struct map));
 	if (res == NULL) return NULL;
@@ -54,11 +54,12 @@ map_create(size_t num_buckets, key_size_fn key_size)
 		return NULL;
 	}
 	res->key_size = key_size;
+	res->allow_autoexpand = allow_autoexpand;
 	return res;
 }
 
 struct map *
-map_create_fs(size_t num_buckets, size_t key_size)
+map_create_fs(size_t num_buckets, size_t key_size, int allow_autoexpand)
 {
 	struct map *res = malloc(sizeof(struct map));
 	if (res == NULL) return NULL;
@@ -69,6 +70,7 @@ map_create_fs(size_t num_buckets, size_t key_size)
 	}
 	res->key_size = NULL;
 	res->fixed_key_size = key_size;
+	res->allow_autoexpand = allow_autoexpand;
 	return res;
 }
 
@@ -127,6 +129,11 @@ map_insert(struct map *map, void *key, void *value, key_eq_fn eq)
 	if (eq != NULL && can_find(*chain, key, eq)) 
 		return MAPE_EXIST;
 
+	if (map->allow_autoexpand && map_load_factor(map) >= CRIT_LOAD_FACTOR) {
+		int ok = map_expand(map, EXPAND_FACTOR, EXPAND_MIN);
+		if (!ok) return MAPE_NOMEM;
+	}
+
 	struct map_pair *pair = create_pair(key, value);
 	if (pair == NULL)
 		return MAPE_NOMEM;
@@ -147,6 +154,11 @@ map_insert_ex(struct map *map, void *key, void *value, key_eq_ex_fn eq, void *ar
 	if (eq != NULL && can_find_ex(*chain, key, eq, arg)) 
 		return MAPE_EXIST;
 
+	if (map->allow_autoexpand && map_load_factor(map) >= CRIT_LOAD_FACTOR) {
+		int ok = map_expand(map, EXPAND_FACTOR, EXPAND_MIN);
+		if (!ok) return MAPE_NOMEM;
+	}
+
 	struct map_pair *pair = create_pair(key, value);
 	if (pair == NULL)
 		return MAPE_NOMEM;
@@ -163,6 +175,7 @@ map_expand(struct map *map, double factor, size_t min)
 	size_t old_size = arr_size(map->buckets);
 	size_t new_size = old_size * factor;
 	if (new_size < old_size + min) new_size = old_size + min;
+	new_size = next_prime(new_size);
 
 	struct array *old_buckets = map->buckets;
 	int ok = init_buckets(map, new_size);
@@ -252,8 +265,8 @@ next_prime(size_t i)
 {
 	if (i % 2 == 0) i++;
 	while (1) {
-		if (is_prime(i)) return i;
 		i += 2;
+		if (is_prime(i)) return i;
 	}
 }
 

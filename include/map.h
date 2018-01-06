@@ -29,6 +29,8 @@ struct map
 	/* If this is NULL, then 'fixed_key_size' will be used instead. */
 	key_size_fn key_size;
 	size_t fixed_key_size;
+
+	int allow_autoexpand;
 };
 
 struct map_pair
@@ -47,11 +49,11 @@ enum map_err
 
 /* The number of buckets will be rounded up to the nearest prime. */
 struct map *
-map_create(size_t num_buckets, key_size_fn key_size);
+map_create(size_t num_buckets, key_size_fn key_size, int allow_autoexpand);
 
 /* Create a map with fixed size of keys. */
 struct map *
-map_create_fs(size_t num_buckets, size_t key_size);
+map_create_fs(size_t num_buckets, size_t key_size, int allow_autoexpand);
 
 /* ---------- destruction ---------- */
 
