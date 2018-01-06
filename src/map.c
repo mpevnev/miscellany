@@ -209,13 +209,17 @@ map_remove(struct map *map, void *key, key_eq_fn eq, int remove_all, void **valu
 	int found = 0;
 	struct list_elem *cur = list_first(*chain);
 	while (cur != NULL) {
+		struct list_elem *next = list_next(cur);
 		struct map_pair *pair = list_data(cur);
 		if (eq(pair->key, key)) {
 			if (!found) res = pair->value;
 			found = 1;
 			list_remove(*chain, cur);
+			free(cur);
+			free(pair);
 			if (!remove_all) break;
 		}
+		cur = next;
 	}
 
 	if (found && value != NULL) *value = res;
@@ -233,13 +237,17 @@ map_remove_ex(struct map *map, void *key, key_eq_ex_fn eq, int remove_all, void 
 	int found = 0;
 	struct list_elem *cur = list_first(*chain);
 	while (cur != NULL) {
+		struct list_elem *next = list_next(cur);
 		struct map_pair *pair = list_data(cur);
 		if (eq(pair->key, key, arg)) {
 			if (!found) res = pair->value;
 			found = 1;
 			list_remove(*chain, cur);
+			free(cur);
+			free(pair);
 			if (!remove_all) break;
 		}
+		cur = next;
 	}
 
 	if (found && value != NULL) *value = res;
