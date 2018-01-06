@@ -292,11 +292,8 @@ map_lookup_ex(struct map *map, void *key, key_eq_ex_fn eq, void *eq_arg, void **
 	return 0;
 }
 
-size_t
-map_num_buckets(struct map *map)
-{
-	return arr_size(map->buckets);
-}
+extern size_t
+map_num_buckets(struct map *map);
 
 double
 map_load_factor(struct map *map)

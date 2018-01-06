@@ -337,17 +337,11 @@ list_remove(struct list *from, struct list_elem *elem)
 
 /* ---------- information retrieval ---------- */
 
-struct list_elem *
-list_first(struct list *list)
-{
-	return list->first;
-}
+extern struct list_elem *
+list_first(struct list *list);
 
 struct list_elem *
-list_last(struct list *list)
-{
-	return list->last;
-}
+list_last(struct list *list);
 
 size_t
 list_length(struct list *list)
@@ -362,10 +356,7 @@ list_length(struct list *list)
 }
 
 int
-list_empty(struct list *list)
-{
-	return list->first == NULL;
-}
+list_empty(struct list *list);
 
 struct list_elem *
 list_nth(struct list *list, size_t n)
@@ -394,22 +385,13 @@ list_nth_from_back(struct list *list, size_t n)
 }
 
 void *
-list_data(struct list_elem *elem)
-{
-	return elem->data;
-}
+list_data(struct list_elem *elem);
 
 struct list_elem *
-list_next(struct list_elem *elem)
-{
-	return elem->next;
-}
+list_next(struct list_elem *elem);
 
 struct list_elem *
-list_prev(struct list_elem *elem)
-{
-	return elem->prev;
-}
+list_prev(struct list_elem *elem);
 
 struct list_elem *
 list_find(struct list *list, list_pred cond)

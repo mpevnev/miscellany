@@ -108,11 +108,8 @@ exc_rethrow(struct except *exc, void *new_data, void (*new_cleaner)(void *))
 	exc_throw(exc);
 }
 
-void *
-exc_data(struct except *exc)
-{
-	return exc->data;
-}
+extern void *
+exc_data(struct except *exc);
 
 void
 exc_destroy(struct except *exc)

@@ -76,18 +76,30 @@ arr_fin_exx(struct array *, void (*data_destroyer)(void *data, void *arg), void 
 
 /* ---------- information retrieval ---------- */
 
-extern size_t
-arr_size(struct array *);
+inline size_t
+arr_size(struct array *array)
+{
+	return array->size;
+}
 
-extern size_t 
-arr_capacity(struct array *);
+inline size_t 
+arr_capacity(struct array *array)
+{
+	return array->capacity;
+}
 
-extern size_t 
-arr_stride(struct array *);
+inline size_t 
+arr_stride(struct array *array)
+{
+	return array->stride;
+}
 
-/* Index into an array. */
-extern void *
-arr_ix(struct array *, size_t index);
+/* Index into an array. Return the pointer to the data. */
+inline void *
+arr_ix(struct array *array, size_t index)
+{
+	return array->data + array->stride * index;
+}
 
 /* ---------- manipulation ---------- */
 

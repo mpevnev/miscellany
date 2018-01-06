@@ -123,17 +123,26 @@ list_remove(struct list *, struct list_elem *);
 
 /* ---------- information retrieval ---------- */
 
-extern struct list_elem *
-list_first(struct list *);
+inline struct list_elem *
+list_first(struct list *list)
+{
+	return list->first;
+}
 
-extern struct list_elem *
-list_last(struct list *);
+inline struct list_elem *
+list_last(struct list *list)
+{
+	return list->last;
+}
 
 extern size_t
 list_length(struct list *);
 
-extern int
-list_empty(struct list *);
+inline int
+list_empty(struct list *list)
+{
+	return list->first == NULL;
+}
 
 /* Return NULL if the list is shorter than 'n'. Zero-indexed. */
 extern struct list_elem *
@@ -143,14 +152,23 @@ list_nth(struct list *, size_t n);
 extern struct list_elem *
 list_nth_from_back(struct list *, size_t n);
 
-extern void *
-list_data(struct list_elem *);
+inline void *
+list_data(struct list_elem *elem)
+{
+	return elem->data;
+}
 
-extern struct list_elem *
-list_next(struct list_elem *);
+inline struct list_elem *
+list_next(struct list_elem *elem)
+{
+	return elem->next;
+}
 
-extern struct list_elem *
-list_prev(struct list_elem *);
+inline struct list_elem *
+list_prev(struct list_elem *elem)
+{
+	return elem->prev;
+}
 
 /* Find the first element upon which cond(elem->data) returns true. */
 extern struct list_elem *

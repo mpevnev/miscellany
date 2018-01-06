@@ -76,8 +76,11 @@ exc_throw_new(int ns, int type, void *data, void (*data_cleaner)(void *));
 extern _Noreturn void
 exc_rethrow(struct except *exc, void *new_data, void (*new_cleaner)(void *));
 
-extern void *
-exc_data(struct except *exc);
+inline void *
+exc_data(struct except *exc)
+{
+	return exc->data;
+}
 
 extern void
 exc_destroy(struct except *);

@@ -118,8 +118,11 @@ map_lookup(struct map *, void *key, key_eq_fn eq, void **value);
 int
 map_lookup_ex(struct map *, void *key, key_eq_ex_fn eq, void *eq_arg, void **value);
 
-size_t
-map_num_buckets(struct map *);
+inline size_t
+map_num_buckets(struct map *map)
+{
+	return arr_size(map->buckets);
+}
 
 double
 map_load_factor(struct map *);

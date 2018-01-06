@@ -120,23 +120,14 @@ btt_init(struct btt *btt, struct btree *tree, enum btt_type type)
 	} /* switch type */
 }
 
-int
-btt_done(struct btt *btt)
-{
-	return btt->cur == NULL;
-}
+extern int
+btt_done(struct btt *btt);
 
-void *
-btt_this(struct btt *btt)
-{
-	return btt->cur->data;
-}
+extern void *
+btt_this(struct btt *btt);
 
-struct btree *
-btt_this_node(struct btt *btt)
-{
-	return btt->cur;
-}
+extern struct btree *
+btt_this_node(struct btt *btt);
 
 void *
 btt_next(struct btt *btt)
@@ -175,35 +166,20 @@ btt_fin(struct btt *btt)
 
 /* ---------- information retrieval ---------- */
 
-void *
-btree_data(struct btree *tree)
-{
-	return tree->data;
-}
+extern void *
+btree_data(struct btree *tree);
 
-struct btree *
-btree_left(struct btree *tree)
-{
-	return tree->link[0];
-}
+extern struct btree *
+btree_left(struct btree *tree);
 
-struct btree *
-btree_right(struct btree *tree)
-{
-	return tree->link[1];
-}
+extern struct btree *
+btree_right(struct btree *tree);
 
-int
-btree_thread(struct btree *tree, int dir)
-{
-	return tree->thread[!!dir];
-}
+extern int
+btree_thread(struct btree *tree, int dir);
 
-struct btree *
-btree_link(struct btree *tree, int dir)
-{
-	return tree->link[!!dir];
-}
+extern struct btree *
+btree_link(struct btree *tree, int dir);
 
 int
 btree_has_children(struct btree *tree)
@@ -247,8 +223,6 @@ btree_link_dir(struct btree *tree, struct btree *link)
 		if (tree->link[i] == link) return i;
 	return -1;
 }
-
-#include <stdio.h>
 
 size_t
 btree_size(struct btree *tree)

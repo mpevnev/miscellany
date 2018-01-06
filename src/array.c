@@ -117,29 +117,17 @@ arr_fin_exx(struct array *array, void (*destroyer)(void *data, void *arg), void 
 
 /* ---------- information retrieval ---------- */
 
-size_t
-arr_size(struct array *array)
-{
-	return array->size;
-}
+extern size_t
+arr_size(struct array *array);
 
-size_t 
-arr_capacity(struct array *array)
-{
-	return array->capacity;
-}
+extern size_t 
+arr_capacity(struct array *array);
 
-size_t 
-arr_stride(struct array *array)
-{
-	return array->stride;
-}
+extern size_t 
+arr_stride(struct array *array);
 
-void *
-arr_ix(struct array *array, size_t index)
-{
-	return array->data + array->stride * index;
-}
+extern void *
+arr_ix(struct array *array, size_t index);
 
 /* ---------- manipulation ---------- */
 
