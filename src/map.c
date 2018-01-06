@@ -199,6 +199,53 @@ map_expand(struct map *map, double factor, size_t min)
 	return 1;
 }
 
+int
+map_remove(struct map *map, void *key, key_eq_fn eq, int remove_all, void **value)
+{
+	size_t ix = fnv_hash(key, get_size(map, key)) % arr_size(map->buckets);
+
+	struct list **chain = arr_ix(map->buckets, ix);
+	void *res = NULL;
+	int found = 0;
+	struct list_elem *cur = list_first(*chain);
+	while (cur != NULL) {
+		struct map_pair *pair = list_data(cur);
+		if (eq(pair->key, key)) {
+			if (!found) res = pair->value;
+			found = 1;
+			list_remove(*chain, cur);
+			if (!remove_all) break;
+		}
+	}
+
+	if (found && value != NULL) *value = res;
+	return found;
+}
+
+int
+map_remove_ex(struct map *map, void *key, key_eq_ex_fn eq, int remove_all, void *arg,
+		void **value)
+{
+	size_t ix = fnv_hash(key, get_size(map, key)) % arr_size(map->buckets);
+
+	struct list **chain = arr_ix(map->buckets, ix);
+	void *res = NULL;
+	int found = 0;
+	struct list_elem *cur = list_first(*chain);
+	while (cur != NULL) {
+		struct map_pair *pair = list_data(cur);
+		if (eq(pair->key, key, arg)) {
+			if (!found) res = pair->value;
+			found = 1;
+			list_remove(*chain, cur);
+			if (!remove_all) break;
+		}
+	}
+
+	if (found && value != NULL) *value = res;
+	return found;
+}
+
 /* ---------- information retrieval ---------- */
 
 int
