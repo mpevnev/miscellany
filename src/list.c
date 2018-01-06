@@ -254,7 +254,7 @@ list_extract_back(struct list *into, struct list *from, struct list_elem *elem)
 	}
 }
 
-/* ---------- popping ---------- */
+/* ---------- removal ---------- */
 
 void *
 list_pop(struct list *list)
@@ -322,6 +322,17 @@ list_clear_exx(struct list *list, void (*destroyer)(void *data, void *arg), void
 		cur = next;
 	}
 	list->first = list->last = NULL;
+}
+
+void
+list_remove(struct list *from, struct list_elem *elem)
+{
+	struct list_elem *prev = elem->prev;
+	struct list_elem *next = elem->next;
+	if (prev != NULL) prev->next = next;
+	if (next != NULL) next->prev = prev;
+	if (from->first == elem) from->first = next;
+	if (from->last == elem) from->last = prev;
 }
 
 /* ---------- information retrieval ---------- */

@@ -115,6 +115,12 @@ list_clear_ex(struct list *, void (*destroyer)(void *data));
 extern void 
 list_clear_exx(struct list *, void (*destroyer)(void *data, void *arg), void *arg);
 
+/* The element becomes detached in process. It's up to the user to 'free' it. *
+ * For convenience, the detached element still points to its previous and next
+ * elements. */
+extern void 
+list_remove(struct list *, struct list_elem *);
+
 /* ---------- information retrieval ---------- */
 
 extern struct list_elem *
