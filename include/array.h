@@ -1,6 +1,8 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
+#include <string.h>
+
 /** Array module.
  *
  * Provides dynamically growable (and shrinkable) arrays.
@@ -104,12 +106,15 @@ arr_ix(struct array *array, size_t index)
 /* ---------- manipulation ---------- */
 
 /* Note that this uses buffer pointed to by 'data', not the pointer itself. */
-extern void
-arr_set(struct array *, size_t index, void *data);
+inline void
+arr_set(struct array *array, size_t index, void *data)
+{
+	memcpy(array->data + index * array->stride, data, array->stride);
+}
 
 /* All of these return 1 on success and 0 on failure. 
  * If used on a view, data will be copied and the view will become an 
- * independent array. */
+ * independent array. If such an operation fails, the view remains a view. */
 
 /* Note that both append and prepend work on data pointed to by the 'data', not
  * with the data pointer itself. */

@@ -131,11 +131,14 @@ arr_ix(struct array *array, size_t index);
 
 /* ---------- manipulation ---------- */
 
-void
-arr_set(struct array *array, size_t index, void *data)
-{
-	memcpy(array->data + index * array->stride, data, array->stride);
-}
+extern void
+arr_set(struct array *array, size_t index, void *data);
+
+/* It may not be immediately obvious, where 'convert a view to an independent
+ * array on an append/prepend' code is. It is in 'preallocate' since for all
+ * views capacity is always equal to size, so preallocating code will always
+ * be executed. Neat, saves a lot of typing.
+ */
 
 int
 arr_append(struct array *array, void *data)
@@ -195,10 +198,17 @@ int
 arr_preallocate(struct array *array, size_t new_capacity)
 {
 	if (new_capacity <= array->size) return 1;
-	void *new_data = realloc(array->data, new_capacity * array->stride);
-	if (new_data == NULL) return 0;
+	if (array->is_view) {
+		void *new_data = malloc(new_capacity * array->stride);
+		if (new_data == NULL) return 0;
+		memcpy(new_data, array->data, array->size * array->stride);
+		array->data = new_data;
+	} else {
+		void *new_data = realloc(array->data, new_capacity * array->stride);
+		if (new_data == NULL) return 0;
+		array->data = new_data;
+	}
 	array->capacity = new_capacity;
-	array->data = new_data;
 	return 1;
 }
 
