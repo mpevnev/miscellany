@@ -158,11 +158,6 @@ aview_init(struct array *view, struct array *array, size_t start, size_t end);
  *
  * Shifting the right end will never affect the left end, and vice-versa.
  *
- * The previous two rules mean that shifting left end to the right or right end
- * to the left may result in less shift than requested, if the other end would
- * be encountered on the way. In such case, 'data' pointer will be moved to the
- * first or the last element of the array, depending on the direction.
- *
  * And please, don't use it with actual arrays, only with views. */
 extern void
 aview_shift(struct array *view, enum aview_dir which_end, enum aview_dir where,
