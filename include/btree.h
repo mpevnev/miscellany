@@ -82,9 +82,6 @@ btt_this_node(struct btt *btt)
 	return btt->cur;
 }
 
-extern void *
-btt_next(struct btt *);
-
 extern struct btree *
 btt_next_node(struct btt *);
 
