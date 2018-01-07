@@ -223,6 +223,7 @@ btree_delete_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *arg,
 
 /* ---------- other ---------- */
 
+/*
 extern void
 btree_rebalance(struct btree *tree, btree_cmp_fn cmp);
 
@@ -234,12 +235,15 @@ btree_reorder(struct btree *tree, btree_cmp_fn new_cmp);
 
 extern void
 btree_reorder_ex(struct btree *tree, btree_cmp_ex_fn new_cmp, void *cmp_arg);
+*/
 
 /* This is shallow copying. Also note that if you're copying a subtree, its 
  * copy will be made into a standalone tree not referring in any way to the
  * original's parent tree. */
+/*
 extern struct btree *
 btree_copy(struct btree *tree);
+*/
 
 /* Unlink the given subtree from its tree. */
 extern void
