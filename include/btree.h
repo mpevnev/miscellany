@@ -101,31 +101,31 @@ btt_fin(struct btt *);
 
 /* ---------- accessing struct members and information retrieval ---------- */
 
-extern void *
+inline void *
 btree_data(struct btree *tree)
 {
 	return tree->data;
 }
 
-extern struct btree *
+inline struct btree *
 btree_left(struct btree *tree)
 {
 	return tree->link[0];
 }
 
-extern struct btree *
+inline struct btree *
 btree_right(struct btree *tree)
 {
 	return tree->link[1];
 }
 
-extern int
+inline int
 btree_thread(struct btree *tree, int dir)
 {
 	return tree->thread[!!dir];
 }
 
-extern struct btree *
+inline struct btree *
 btree_link(struct btree *tree, int dir)
 {
 	return tree->link[!!dir];
