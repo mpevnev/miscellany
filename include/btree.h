@@ -1,6 +1,8 @@
 #ifndef BTREE_H
 #define BTREE_H
 
+#include <stdlib.h>
+
 /** A binary tree module. 
  *
  * Based on a tutorial by Eternally Confuzzled. 
