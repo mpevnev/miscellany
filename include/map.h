@@ -91,32 +91,24 @@ int
 map_expand(struct map *map, double factor, size_t min);
 
 /* Remove an element from a map by given key.
- * If 'remove_all' is true, remove all keys that compare equal to the given
- * one.
- * Return 1 if the key was in the map, 0 otherwise.
- * If 'value' is not NULL, fill it with the value of the removed key (just the
- * first one if 'remove_all' is set).
+ * Return the removed pair or NULL if the key is not found in the map.
+ * It's up to the caller to free the pair later.
  */
-int
-map_remove(struct map *map, void *key, key_eq_fn eq, int remove_all, void **value);
+struct map_pair *
+map_remove(struct map *map, void *key, key_eq_fn eq);
 
 /* Same, but the comparison function takes an extra argument. */
-int
-map_remove_ex(struct map *map, void *key, key_eq_ex_fn eq, int remove_all, void *arg,
-		void **value);
+struct map_pair *
+map_remove_ex(struct map *map, void *key, key_eq_ex_fn eq, void *arg);
 
 /* ---------- information retrieval ---------- */
 
-/* Return 1 and fill 'value' with the associated value if a key is found in a
- * mapping.
- * Return 0 otherwise.
- */
-int
-map_lookup(struct map *, void *key, key_eq_fn eq, void **value);
+struct map_pair *
+map_lookup(struct map *, void *key, key_eq_fn eq);
 
 /* Same, but equality function takes an extra argument. */
-int
-map_lookup_ex(struct map *, void *key, key_eq_ex_fn eq, void *eq_arg, void **value);
+struct map_pair *
+map_lookup_ex(struct map *, void *key, key_eq_ex_fn eq, void *eq_arg);
 
 inline size_t
 map_num_buckets(struct map *map)

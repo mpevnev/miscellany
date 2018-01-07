@@ -199,65 +199,50 @@ map_expand(struct map *map, double factor, size_t min)
 	return 1;
 }
 
-int
-map_remove(struct map *map, void *key, key_eq_fn eq, int remove_all, void **value)
+struct map_pair *
+map_remove(struct map *map, void *key, key_eq_fn eq)
 {
 	size_t ix = fnv_hash(key, get_size(map, key)) % arr_size(map->buckets);
 
 	struct list **chain = arr_ix(map->buckets, ix);
-	void *res = NULL;
-	int found = 0;
 	struct list_elem *cur = list_first(*chain);
 	while (cur != NULL) {
 		struct list_elem *next = list_next(cur);
 		struct map_pair *pair = list_data(cur);
 		if (eq(pair->key, key)) {
-			if (!found) res = pair->value;
-			found = 1;
 			list_remove(*chain, cur);
 			free(cur);
-			free(pair);
-			if (!remove_all) break;
+			return pair;
 		}
 		cur = next;
 	}
-
-	if (found && value != NULL) *value = res;
-	return found;
+	return NULL;
 }
 
-int
-map_remove_ex(struct map *map, void *key, key_eq_ex_fn eq, int remove_all, void *arg,
-		void **value)
+struct map_pair *
+map_remove_ex(struct map *map, void *key, key_eq_ex_fn eq, void *arg)
 {
 	size_t ix = fnv_hash(key, get_size(map, key)) % arr_size(map->buckets);
 
 	struct list **chain = arr_ix(map->buckets, ix);
-	void *res = NULL;
-	int found = 0;
 	struct list_elem *cur = list_first(*chain);
 	while (cur != NULL) {
 		struct list_elem *next = list_next(cur);
 		struct map_pair *pair = list_data(cur);
 		if (eq(pair->key, key, arg)) {
-			if (!found) res = pair->value;
-			found = 1;
 			list_remove(*chain, cur);
 			free(cur);
-			free(pair);
-			if (!remove_all) break;
+			return pair;
 		}
 		cur = next;
 	}
-
-	if (found && value != NULL) *value = res;
-	return found;
+	return NULL;
 }
 
 /* ---------- information retrieval ---------- */
 
-int
-map_lookup(struct map *map, void *key, key_eq_fn eq, void **value)
+struct map_pair *
+map_lookup(struct map *map, void *key, key_eq_fn eq)
 {
 	size_t ix = fnv_hash(key, get_size(map, key)) % arr_size(map->buckets);
 
@@ -265,17 +250,15 @@ map_lookup(struct map *map, void *key, key_eq_fn eq, void **value)
 	struct list_elem *cur = list_first(*chain);
 	while (cur != NULL) {
 		struct map_pair *pair = list_data(cur);
-		if (eq(pair->key, key)) {
-			*value = pair->value;
-			return 1;
-		}
+		if (eq(pair->key, key)) 
+			return pair;
 		cur = list_next(cur);
 	}
 	return 0;
 }
 
-int
-map_lookup_ex(struct map *map, void *key, key_eq_ex_fn eq, void *eq_arg, void **value)
+struct map_pair *
+map_lookup_ex(struct map *map, void *key, key_eq_ex_fn eq, void *eq_arg)
 {
 	size_t ix = fnv_hash(key, get_size(map, key)) % arr_size(map->buckets);
 
@@ -283,10 +266,8 @@ map_lookup_ex(struct map *map, void *key, key_eq_ex_fn eq, void *eq_arg, void **
 	struct list_elem *cur = list_first(*chain);
 	while (cur != NULL) {
 		struct map_pair *pair = list_data(cur);
-		if (eq(pair->key, key, eq_arg)) {
-			*value = pair->value;
-			return 1;
-		}
+		if (eq(pair->key, key, eq_arg))
+			return pair;
 		cur = list_next(cur);
 	}
 	return 0;

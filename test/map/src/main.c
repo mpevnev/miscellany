@@ -56,22 +56,21 @@ START_TEST(test_lookup)
 	ck_assert_msg(map_insert(map, &i4, &f4, &int_eq) == MAPE_OK,
 			"Failed to insert (3, 10.2) into a map");
 
-	void *res;
-	int ok = map_lookup(map, &i1, &int_eq, &res);
-	ck_assert_msg(ok, "0 is not found in the map");
-	ck_assert_msg(*((double *)res) == f1, "Wrong value is associated with 0");
+	struct map_pair *pair = map_lookup(map, &i1, &int_eq);
+	ck_assert_msg(pair != NULL, "0 is not found in the map");
+	ck_assert_msg(*((double *)pair->value) == f1, "Wrong value is associated with 0");
 
-	ok = map_lookup(map, &i2, &int_eq, &res);
-	ck_assert_msg(ok, "10 is not found in the map");
-	ck_assert_msg(*((double *)res) == f2, "Wrong value is associated with 10");
+	pair = map_lookup(map, &i2, &int_eq);
+	ck_assert_msg(pair != NULL, "10 is not found in the map");
+	ck_assert_msg(*((double *)pair->value) == f2, "Wrong value is associated with 10");
 
-	ok = map_lookup(map, &i3, &int_eq, &res);
-	ck_assert_msg(ok, "2 is not found in the map");
-	ck_assert_msg(*((double *)res) == f3, "Wrong value is associated with 2");
+	pair = map_lookup(map, &i3, &int_eq);
+	ck_assert_msg(pair != NULL, "2 is not found in the map");
+	ck_assert_msg(*((double *)pair->value) == f3, "Wrong value is associated with 2");
 
-	ok = map_lookup(map, &i4, &int_eq, &res);
-	ck_assert_msg(ok, "3 is not found in the map");
-	ck_assert_msg(*((double *)res) == f4, "Wrong value is associated with 3");
+	pair = map_lookup(map, &i4, &int_eq);
+	ck_assert_msg(pair != NULL, "3 is not found in the map");
+	ck_assert_msg(*((double *)pair->value) == f4, "Wrong value is associated with 3");
 
 	map_destroy(map);
 }
@@ -111,28 +110,25 @@ START_TEST(test_remove)
 	ck_assert_msg(map_insert(map, &i4, &f4, &int_eq) == MAPE_OK,
 			"Failed to insert (3, 10.2) into a map");
 
-	void *removed;
-	ck_assert_msg(map_remove(map, &i1, &int_eq, 0, &removed),
-			"Failed to remove (0, 0) from a map");
-	ck_assert_msg(removed == &f1, "Removed value is not 0");
+	struct map_pair *removed = map_remove(map, &i1, &int_eq);
+	ck_assert_msg(removed != NULL, "Failed to remove (0, 0) from the map");
+	ck_assert_msg(removed->value == &f1, "Removed value is not 0");
+	free(removed);
 
-	void *res;
-	int ok;
+	struct map_pair *pair = map_lookup(map, &i1, &int_eq);
+	ck_assert_msg(pair == NULL, "0 is still found in the map");
 
-	ok = map_lookup(map, &i1, &int_eq, &res);
-	ck_assert_msg(!ok, "0 is found in the map");
+	pair = map_lookup(map, &i2, &int_eq);
+	ck_assert_msg(pair != NULL, "10 is not found in the map");
+	ck_assert_msg(*((double *)pair->value) == f2, "Wrong value is associated with 10");
 
-	ok = map_lookup(map, &i2, &int_eq, &res);
-	ck_assert_msg(ok, "10 is not found in the map");
-	ck_assert_msg(*((double *)res) == f2, "Wrong value is associated with 10");
+	pair = map_lookup(map, &i3, &int_eq);
+	ck_assert_msg(pair != NULL, "2 is not found in the map");
+	ck_assert_msg(*((double *)pair->value) == f3, "Wrong value is associated with 2");
 
-	ok = map_lookup(map, &i3, &int_eq, &res);
-	ck_assert_msg(ok, "2 is not found in the map");
-	ck_assert_msg(*((double *)res) == f3, "Wrong value is associated with 2");
-
-	ok = map_lookup(map, &i4, &int_eq, &res);
-	ck_assert_msg(ok, "3 is not found in the map");
-	ck_assert_msg(*((double *)res) == f4, "Wrong value is associated with 3");
+	pair = map_lookup(map, &i4, &int_eq);
+	ck_assert_msg(pair != NULL, "3 is not found in the map");
+	ck_assert_msg(*((double *)pair->value) == f4, "Wrong value is associated with 3");
 
 	map_destroy(map);
 }
