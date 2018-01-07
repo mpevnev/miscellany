@@ -76,8 +76,7 @@ arr_init_from_array(struct array *init, struct array *from)
 void
 arr_destroy(struct array *array)
 {
-	if (!array->is_view) 
-		free(array->data);
+	arr_fin(array);
 	free(array);
 }
 
@@ -93,6 +92,13 @@ arr_destroy_exx(struct array *array, void (*destroyer)(void *data, void *arg), v
 {
 	arr_fin_exx(array, destroyer, arg);
 	free(array);
+}
+
+void
+arr_fin(struct array *array)
+{
+	if (!array->is_view)
+		free(array->data);
 }
 
 void

@@ -55,12 +55,10 @@ arr_init_from_array(struct array *init, struct array *from);
 
 /* ---------- destruction and finalization ---------- */
 
-/* Don't call this on an array that was statically allocated. It'll attempt to
- * free it, most likely segfaulting in process. */
+/* These three free both the array and the data. */
+
 extern void
 arr_destroy(struct array *);
-
-/* These two free the array and the data it holds. */
 
 extern void
 arr_destroy_ex(struct array *, void (*data_destroyer)(void *data));
@@ -68,7 +66,10 @@ arr_destroy_ex(struct array *, void (*data_destroyer)(void *data));
 extern void
 arr_destroy_exx(struct array *, void (*data_destroyer)(void *data, void *arg), void *arg);
 
-/* These - only the data. */
+/* These three - just the data. */
+
+extern void
+arr_fin(struct array *);
 
 extern void
 arr_fin_ex(struct array *, void (*data_destroyer)(void *data));
