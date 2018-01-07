@@ -101,11 +101,14 @@ btt_create(struct btree *tree, enum btt_type type)
 	struct btt *res = malloc(sizeof(struct btt));
 	if (res == NULL) return NULL;
 
-	btt_init(res, tree, type);
+	if (!btt_init(res, tree, type)) {
+		free(res);
+		return NULL;
+	}
 	return res;
 }
 
-void
+int
 btt_init(struct btt *btt, struct btree *tree, enum btt_type type)
 {
 	btt->tree = tree;
@@ -113,10 +116,10 @@ btt_init(struct btt *btt, struct btree *tree, enum btt_type type)
 	switch (type) {
 		case BTT_INORDER:
 			btt->cur = btree_outermost(tree, 0);
-			break;
+			return 1;
 		case BTT_INORDER_REV:
 			btt->cur = btree_outermost(tree, 1);
-			break;
+			return 1;
 	} /* switch type */
 }
 
@@ -239,54 +242,6 @@ btree_size(struct btree *tree)
 	return res;
 }
 
-/* ---------- searching ---------- */
-
-int
-btree_find(struct btree *tree, void *data, btree_cmp_fn cmp, void **res)
-{
-	struct btree *found = btree_find_node(tree, data, cmp);
-	if (found == NULL) return 0;
-	if (res != NULL) *res = found->data;
-	return 1;
-}
-
-int 
-btree_find_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *arg, void **res)
-{
-	struct btree *found = btree_find_node_ex(tree, data, cmp, arg);
-	if (found == NULL) return 0;
-	if (res != NULL) *res = found->data;
-	return 1;
-}
-
-struct btree *
-btree_find_node(struct btree *tree, void *data, btree_cmp_fn cmp)
-{
-	if (tree == NULL) return NULL;
-	while(1) {
-		int cmp_res = cmp(data, tree->data);
-		if (cmp_res == 0) return tree;
-
-		int dir = cmp_res > 0;
-		if (tree->thread[dir] || tree->link[dir] == NULL) return NULL;
-		tree = tree->link[dir];
-	}
-}
-
-struct btree *
-btree_find_node_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *cmp_arg)
-{
-	if (tree == NULL) return NULL;
-	while(1) {
-		int cmp_res = cmp(data, tree->data, cmp_arg);
-		if (cmp_res == 0) return tree;
-
-		int dir = cmp_res > 0;
-		if (tree->thread[dir] || tree->link[dir] == NULL) return NULL;
-		tree = tree->link[dir];
-	}
-}
-
 struct btree *
 btree_parent(struct btree *tree)
 {
@@ -336,6 +291,54 @@ btree_after_outermost(struct btree *tree, int dir)
 	if (tree == NULL) return NULL;
 	struct btree *outer = btree_outermost(tree, dir);
 	return outer->link[dir];
+}
+
+/* ---------- searching ---------- */
+
+int
+btree_find(struct btree *tree, void *data, btree_cmp_fn cmp, void **res)
+{
+	struct btree *found = btree_find_node(tree, data, cmp);
+	if (found == NULL) return 0;
+	if (res != NULL) *res = found->data;
+	return 1;
+}
+
+int 
+btree_find_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *arg, void **res)
+{
+	struct btree *found = btree_find_node_ex(tree, data, cmp, arg);
+	if (found == NULL) return 0;
+	if (res != NULL) *res = found->data;
+	return 1;
+}
+
+struct btree *
+btree_find_node(struct btree *tree, void *data, btree_cmp_fn cmp)
+{
+	if (tree == NULL) return NULL;
+	while(1) {
+		int cmp_res = cmp(data, tree->data);
+		if (cmp_res == 0) return tree;
+
+		int dir = cmp_res > 0;
+		if (tree->thread[dir] || tree->link[dir] == NULL) return NULL;
+		tree = tree->link[dir];
+	}
+}
+
+struct btree *
+btree_find_node_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *cmp_arg)
+{
+	if (tree == NULL) return NULL;
+	while(1) {
+		int cmp_res = cmp(data, tree->data, cmp_arg);
+		if (cmp_res == 0) return tree;
+
+		int dir = cmp_res > 0;
+		if (tree->thread[dir] || tree->link[dir] == NULL) return NULL;
+		tree = tree->link[dir];
+	}
 }
 
 /* ---------- insertion ---------- */

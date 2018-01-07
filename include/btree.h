@@ -61,7 +61,7 @@ extern struct btt *
 btt_create(struct btree *tree, enum btt_type type);
 
 /* A non-allocating version of the above. */
-extern void
+extern int
 btt_init(struct btt *btt, struct btree *tree, enum btt_type type);
 
 inline int
@@ -151,26 +151,6 @@ btree_link_dir(struct btree *tree, struct btree *link);
 extern size_t
 btree_size(struct btree *tree);
 
-/* ---------- searching ---------- */
-
-/* Return 1 if the element was found (and fill res with it), return 0 and do
- * nothing with 'res' otherwise. Pass NULL as 'res' to avoid filling it with
- * anything. */
-extern int
-btree_find(struct btree *tree, void *data, btree_cmp_fn cmp, void **res);
-
-/* Return 1 if the element was found (and fill res with it), return 0 and do
- * nothing with 'res' otherwise. Pass NULL as 'res' to avoid filling it with
- * anything. */
-extern int
-btree_find_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *cmp_arg, void **res);
-
-extern struct btree *
-btree_find_node(struct btree *tree, void *data, btree_cmp_fn cmp);
-
-extern struct btree *
-btree_find_node_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *cmp_arg);
-
 extern struct btree *
 btree_parent(struct btree *tree);
 
@@ -190,6 +170,26 @@ btree_outermost(struct btree *tree, int dir);
  * rightmost subnode. */
 extern struct btree *
 btree_after_outermost(struct btree *tree, int dir);
+
+/* ---------- searching ---------- */
+
+/* Return 1 if the element was found (and fill res with it), return 0 and do
+ * nothing with 'res' otherwise. Pass NULL as 'res' to avoid filling it with
+ * anything. */
+extern int
+btree_find(struct btree *tree, void *data, btree_cmp_fn cmp, void **res);
+
+/* Return 1 if the element was found (and fill res with it), return 0 and do
+ * nothing with 'res' otherwise. Pass NULL as 'res' to avoid filling it with
+ * anything. */
+extern int
+btree_find_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *cmp_arg, void **res);
+
+extern struct btree *
+btree_find_node(struct btree *tree, void *data, btree_cmp_fn cmp);
+
+extern struct btree *
+btree_find_node_ex(struct btree *tree, void *data, btree_cmp_ex_fn cmp, void *cmp_arg);
 
 /* ---------- insertion ---------- */
 
