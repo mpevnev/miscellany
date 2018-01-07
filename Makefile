@@ -13,6 +13,7 @@ DOCS=$(addsuffix .md, $(MODULES))
 BUILDDIR=build
 INCDIR=include/misc
 DOCDIR=share/doc/libmiscellany
+LICENSEDIR=share/licenses/libmiscellany
 
 .PHONY: clean install
 
@@ -34,6 +35,7 @@ install: $(NAME)
 	install -d $(prefix)/$(DOCDIR)
 	install -Dm644 $(addprefix include/, $(HEADERS)) $(prefix)/$(INCDIR)
 	install -Dm644 $(addprefix docs/, $(DOCS)) $(prefix)/$(DOCDIR)
+	install -Dm644 LICENSE $(prefix)/$(LICENSEDIR)/LICENSE
 
 $(addprefix $(BUILDDIR)/, $(TARGETS)): $(BUILDDIR)/%.o : src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
