@@ -144,7 +144,53 @@ map_expand(struct map *map, double factor, size_t min)
 Expand the number of buckets by `factor` times, but no less than by `min`.
 Return 1 on success, 0 if there's not enough memory to do so.
 
+### `map_remove`
+
+```
+struct map_pair *
+map_remove(struct map *map, void *key, key_eq_fn eq)
+```
+
+Remove the first occurence of `key` from `map` and return the pair that 
+contained the key, or NULL if `key` was not found in the map. Use `eq` as a 
+comparison function.
+
+### `map_remove_ex`
+
+```
+struct map_pair *
+map_remove_ex(struct map *map, void *key, key_eq_ex_fn eq, void *arg)
+```
+
+Remove the first occurence of `key` from `map` and return the pair that 
+contained the key, or NULL if `key` was not found in the map. Use `eq` as a 
+comparison function with the third argument being `arg`.
+
 ## Functions - information retrieval
+
+### `map_lookup`
+
+```
+struct map_pair *
+map_lookup(struct map *map, void *key, key_eq_fn eq)
+```
+
+Return a pair from `map` where key compares equal to `key` using `eq` as a 
+comparison function.
+
+Return NULL if `key` is not found in the map.
+
+### `map_lookup_ex`
+
+```
+struct map_pair *
+map_lookup_ex(struct map *map, void *key, key_eq_ex_fn eq, void *arg)
+```
+
+Return a pair from `map` where key compares equal to `key` using `eq` as a 
+comparison function (with the third argument being `arg`).
+
+Return NULL if `key` is not found in the map.
 
 ### `map_num_buckets`
 
