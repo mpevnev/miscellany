@@ -1,5 +1,5 @@
 
-# Array module `<misc/array.h`
+# Array module `<misc/array.h>`
 
 This module provides growable arrays. At the moment the functionality is quite
 limited - just basic array operations, appending/prepending elements and other
